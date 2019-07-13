@@ -1,9 +1,11 @@
-# nem2-wallet
+# NEM2 wallet
 > This is NEM2(Catapult) Wallet.
 
 <!-- <a href="https://imgur.com/IGVIKg2"><img src="https://i.imgur.com/IGVIKg2.png" width="40%" height="40%" /></a> -->
 
 # Application
+
+[https://hukusuke1007.github.io/nem2-wallet/](https://hukusuke1007.github.io/nem2-wallet/)
 
 ## Usage for developer
 
