@@ -8,11 +8,19 @@
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
+    "dotenv-webpack": "^1.7.0",
+    "encoding-japanese": "^1.0.29",
+    "localforage": "^1.7.3",
+    "nem2-sdk": "^0.13.0",
     "register-service-worker": "^1.6.2",
+    "rxjs": "^6.5.2",
     "vue": "^2.6.10",
     "vue-class-component": "^7.0.2",
     "vue-property-decorator": "^8.1.0",
+    "vue-qriously": "^1.1.1",
     "vue-router": "^3.0.3",
+    "vue2-toast": "^2.1.0",
+    "vuetify": "^1.5.16",
     "vuex": "^3.0.1"
   },
   "devDependencies": {

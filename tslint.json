@@ -1,19 +1,22 @@
 {
-  "defaultSeverity": "warning",
-  "extends": [
-    "tslint:recommended"
-  ],
-  "linterOptions": {
-    "exclude": [
-      "node_modules/**"
-    ]
-  },
-  "rules": {
-    "quotemark": [true, "single"],
-    "indent": [true, "spaces", 2],
-    "interface-name": false,
-    "ordered-imports": false,
-    "object-literal-sort-keys": false,
-    "no-consecutive-blank-lines": false
-  }
+	"defaultSeverity": "warning",
+	"extends": ["tslint:recommended"],
+	"linterOptions": {
+		"exclude": ["node_modules/**"]
+	},
+	"rules": {
+		"quotemark": [true, "single"],
+		"semicolon": [false, "always"],
+		"no-console": [false],
+		"indent": [false, "spaces", 2],
+		"max-line-length": [false, 120],
+		"trailing-comma": [true, { "multiline": "always", "singleline": "never" }],
+		"interface-name": false,
+		"ordered-imports": false,
+		"member-access": false,
+		"no-trailing-whitespace": true,
+		"object-literal-sort-keys": false,
+		"no-consecutive-blank-lines": false,
+		"interface-over-type-literal": false
+	}
 }
