@@ -1,11 +1,11 @@
 self.__precacheManifest = [
   {
-    "revision": "fa569101279ee455b1af",
+    "revision": "eefed24c1739602c284a",
     "url": "/nem2-wallet/css/app.35f0482f.css"
   },
   {
-    "revision": "fa569101279ee455b1af",
-    "url": "/nem2-wallet/js/app.e3f01474.js"
+    "revision": "eefed24c1739602c284a",
+    "url": "/nem2-wallet/js/app.7de0fc75.js"
   },
   {
     "revision": "760ac11a52f2d1e14ffa",
@@ -16,7 +16,7 @@ self.__precacheManifest = [
     "url": "/nem2-wallet/js/chunk-vendors.4d347686.js"
   },
   {
-    "revision": "51b6ee66a7830bfb2a92e41876d40b54",
+    "revision": "5613e3186b5387c86c6188c9ac2d159e",
     "url": "/nem2-wallet/index.html"
   },
   {

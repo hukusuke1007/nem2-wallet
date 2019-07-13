@@ -5,15 +5,15 @@
 
 <script lang="ts">
 import { Component, Vue, Inject } from 'vue-property-decorator'
-import { FetchLoadBalanceUseCaseImpl } from '@/domain/usecase/FetchLoadBalanceUseCase'
-import { FetchLoadWalletUseCaseImpl } from '@/domain/usecase/FetchLoadWalletUseCase'
-import { FetchSendCoinUseCaseImpl } from '@/domain/usecase/FetchSendCoinUseCase'
+import { FetchLoadBalanceUseCase } from '@/domain/usecase/FetchLoadBalanceUseCase'
+import { FetchLoadWalletUseCase } from '@/domain/usecase/FetchLoadWalletUseCase'
+import { FetchSendCoinUseCase } from '@/domain/usecase/FetchSendCoinUseCase'
 
 @Component
 export default class HomePage extends Vue {
-  @Inject('FetchLoadBalanceUseCase') fetchLoadBalanceUseCase!: FetchLoadBalanceUseCaseImpl
-  @Inject('FetchLoadWalletUseCase') FetchLoadWalletUseCase!: FetchLoadWalletUseCaseImpl
-  @Inject('FetchSendCoinUseCase') FetchSendCoinUseCase!: FetchSendCoinUseCaseImpl
+  @Inject('FetchLoadBalanceUseCase') fetchLoadBalanceUseCase!: FetchLoadBalanceUseCase
+  @Inject('FetchLoadWalletUseCase') fetchLoadWalletUseCase!: FetchLoadWalletUseCase
+  @Inject('FetchSendCoinUseCase') fetchSendCoinUseCase!: FetchSendCoinUseCase
 
   mounted() {
     this.loadBalance()
@@ -27,7 +27,7 @@ export default class HomePage extends Vue {
     const address = ''
     const amount = 0
     const message = ''
-    await this.FetchSendCoinUseCase.execute(address, amount, message)
+    await this.fetchSendCoinUseCase.execute(address, amount, message)
   }
 }
 </script>
