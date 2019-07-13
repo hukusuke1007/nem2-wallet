@@ -1,7 +1,7 @@
 # NEM2 wallet
 > This is NEM2(Catapult) Wallet.
 
-<a href="https://imgur.com/YmbDXIb"><img src="https://i.imgur.com/YmbDXIb.png" width="40%" height="40%" /></a>
+<a href="https://imgur.com/YmbDXIb"><img src="https://i.imgur.com/YmbDXIb.png" width="50%" height="50%" /></a>
 
 # Application
 
@@ -11,7 +11,10 @@
 
 ### Project setup
 
-```
-yarn install
-```
+```sh
+# Install libraries
+$ yarn install
 
+# run
+$ yarn serve
+```
