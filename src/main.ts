@@ -8,6 +8,8 @@ import colors from 'vuetify/es5/util/colors'
 import 'vue2-toast/lib/toast.css'
 import Toast from 'vue2-toast'
 import VueQriously from 'vue-qriously'
+import { provide } from './provide'
+
 
 Vue.use(Vuetify, {
   theme: {
@@ -33,6 +35,7 @@ Vue.use(VueQriously)
 Vue.config.productionTip = false
 
 new Vue({
+  provide,
   router,
   store,
   render: (h) => h(App),

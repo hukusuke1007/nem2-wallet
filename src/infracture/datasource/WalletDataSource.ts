@@ -12,12 +12,17 @@ export class WalletDataSource implements WalletRepository {
   }
 
   createWallet(): Wallet {
+    console.log('createWallet')
     return new Wallet()
   }
-  loadWallet(): Wallet {
-    return new Wallet()
+
+  loadWallet(): Wallet | undefined {
+    console.log('loadWallet')
+    return undefined
   }
+
   async loadBalance(): Promise<number> {
+    console.log('loadBalance')
     return 0
   }
 }
