@@ -1,6 +1,6 @@
 /** DataSource */
-import { WalletDataSource } from '@/infracture/datasource/WalletDataSource'
-import { TransactionDataSource } from '@/infracture/datasource/TransactionDataSource'
+import { WalletDataSource } from '@/Infrastructure/datasource/WalletDataSource'
+import { TransactionDataSource } from '@/Infrastructure/datasource/TransactionDataSource'
 
 /** UseCase */
 import { FetchLoadBalanceUseCaseImpl } from '@/domain/usecase/FetchLoadBalanceUseCase'
