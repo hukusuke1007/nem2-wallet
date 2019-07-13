@@ -1,7 +1,7 @@
 # NEM2 wallet
 > This is NEM2(Catapult) Wallet.
 
-<!-- <a href="https://imgur.com/IGVIKg2"><img src="https://i.imgur.com/IGVIKg2.png" width="40%" height="40%" /></a> -->
+<a href="https://imgur.com/YmbDXIb"><img src="https://i.imgur.com/YmbDXIb.png" width="40%" height="40%" /></a>
 
 # Application
 
