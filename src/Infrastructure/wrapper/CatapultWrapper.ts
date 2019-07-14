@@ -1,7 +1,9 @@
-import * as nem2 from 'nem2-sdk'
+import { Account, NetworkType } from 'nem2-sdk'
 import encoding from 'encoding-japanese'
+import { BlockchainWrapper } from '@/infrastructure/wrapper/BlockchainWrapper'
+import { Wallet } from '@/domain/entity/Wallet'
 
-export class CatapultWrapper {
+export class CatapultWrapper implements BlockchainWrapper {
   static qrJson(v: number, type: number, name: string, addr: string, amount: number, msg: string) {
     const params = { type, data: { name, addr, amount: amount * this.divisibility(), msg }, v }
     return encoding.codeToString(encoding.convert(this.getStr2Array(JSON.stringify(params)), 'UTF8'))
@@ -22,25 +24,32 @@ export class CatapultWrapper {
   endpoint: string
   host: string
   port: string
-  net: number
+  network: number
 
-  constructor(host: string, port: string, net: string) {
+  constructor(host: string, port: string, network: number) {
     this.host = host
     this.port = port
-    this.net = Number(net)
+    this.network = network
     this.endpoint = ''
-    console.log(this.host, this.port, this.net)
+    console.log(this.host, this.port, this.network)
   }
 
-  createAccount() {
-  
+  createAccount(): Wallet {
+    const account = Account.generateNewAccount(this.network)
+    console.log('createAccount', account)
+    const result = new Wallet()
+    result.address = account.address.plain()
+    result.privateKey = account.privateKey
+    result.publicKey = account.publicKey
+    result.networkType = account.address.networkType.valueOf()
+    return result
   }
 
-  async loadAccount() {
-
+  async loadAccount(address: string) {
+    return {}
   }
 
-  async sendNem() {
+  async sendCoin() {
     
   }
 

@@ -17,6 +17,7 @@ export default class HomePage extends Vue {
 
   mounted() {
     this.loadBalance()
+    this.fetchLoadWalletUseCase.execute()
   }
 
   async loadBalance() {

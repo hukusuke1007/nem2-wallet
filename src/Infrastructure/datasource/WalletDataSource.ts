@@ -1,24 +1,37 @@
 import { WalletRepository } from '@/domain/repository/WalletRepository'
+import { BlockchainWrapper } from '@/infrastructure/wrapper/BlockchainWrapper'
 import { Wallet } from '@/domain/entity/Wallet'
 import localForage from 'localforage'
 
-// 実装中
 export class WalletDataSource implements WalletRepository {
 
+  private wrapper: BlockchainWrapper
   private localStorageKey: string
 
-  constructor() {
+  constructor(wrapper: BlockchainWrapper) {
+    this.wrapper = wrapper
     this.localStorageKey = 'nem2-wallet'
   }
 
-  createWallet(): Wallet {
-    console.log('createWallet')
-    return new Wallet()
+  async createWallet(): Promise<Wallet> {
+    const wallet = this.wrapper.createAccount()
+    await localForage.setItem(this.localStorageKey, wallet.toJSON())
+    return wallet
   }
 
-  loadWallet(): Wallet | undefined {
-    console.log('loadWallet')
-    return undefined
+  async loadWallet(): Promise<Wallet | undefined> {
+    const item: any = await localForage.getItem(this.localStorageKey)
+    console.log('loadWallet', item)
+    if (item !== null) {
+      const result = new Wallet()
+      result.address = 'address' in item ? item.address : undefined
+      result.privateKey = 'privateKey' in item ? item.privateKey : undefined
+      result.publicKey = 'publicKey' in item ? item.publicKey : undefined
+      result.networkType = 'networkType' in item ? item.networkType : undefined
+      return result
+    } else {
+      return undefined
+    }
   }
 
   async loadBalance(): Promise<number> {

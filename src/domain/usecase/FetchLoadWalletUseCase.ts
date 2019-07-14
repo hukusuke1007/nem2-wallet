@@ -2,7 +2,7 @@ import { WalletRepository } from '@/domain/repository/WalletRepository'
 import { Wallet } from '@/domain/entity/Wallet'
 
 export interface FetchLoadWalletUseCase {
-  execute(): Wallet
+  execute(): Promise<Wallet>
 }
 
 export class FetchLoadWalletUseCaseImpl implements FetchLoadWalletUseCase {
@@ -13,8 +13,8 @@ export class FetchLoadWalletUseCaseImpl implements FetchLoadWalletUseCase {
     this.repository = repository
   }
 
-  execute(): Wallet {
-    return this.repository.loadWallet() !== undefined ?
-      this.repository.loadWallet()! : this.repository.createWallet()
+  async execute(): Promise<Wallet> {
+    const wallet = await this.repository.loadWallet()
+    return wallet !== undefined ? wallet : await this.repository.createWallet()
   }
 }
