@@ -16,7 +16,7 @@
 
 Rename dotenvsample file to .env file.
 
-Please set catapult network.
+Please set the following catapult network in .env file.
 
 - NETWORK
 - NODE_HOST
@@ -24,7 +24,7 @@ Please set catapult network.
 - NETWORK_GENERATION_HASH
 
 
-Please run yarn commands.
+Please run commands.
 
 ```sh
 # Install libraries
