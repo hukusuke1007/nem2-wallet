@@ -1,7 +1,7 @@
+import localForage from 'localforage'
 import { WalletRepository } from '@/domain/repository/WalletRepository'
 import { NemBlockchainWrapper } from '@/infrastructure/wrapper/NemBlockchainWrapper'
 import { Wallet } from '@/domain/entity/Wallet'
-import localForage from 'localforage'
 
 export class WalletDataSource implements WalletRepository {
 

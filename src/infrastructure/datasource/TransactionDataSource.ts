@@ -1,6 +1,5 @@
 import { TransactionRepository } from '@/domain/repository/TransactionRepository'
 import { NemBlockchainWrapper } from '@/infrastructure/wrapper/NemBlockchainWrapper'
-import { TransactionHistory } from '@/domain/entity/TransactionHistory'
 
 export class TransactionDataSource implements TransactionRepository {
   private wrapper: NemBlockchainWrapper

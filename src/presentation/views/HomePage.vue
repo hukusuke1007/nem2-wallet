@@ -1,58 +1,251 @@
 <template>
-  <div class="home">
+  <div class="homepage">
+    <v-flex xs12 sm6 offset-sm3>
+      <v-card v-if="wallet!==null">
+        <v-container fluid>
+          <v-card flat>
+            <v-card-actions>
+              <v-card-title>
+                <h3>Balance</h3>
+              </v-card-title>
+              <v-spacer />
+              <v-btn
+                fab
+                small
+                flat
+                @click="onLoadBalance()"
+                :loading="isLoading"><v-icon>cached</v-icon></v-btn>
+            </v-card-actions>
+            <v-card-text>{{ balance }} xem</v-card-text>
+            <v-card-title>
+              <h3>Address</h3>
+            </v-card-title>
+            <v-card-text>{{ wallet.address }}</v-card-text>
+            <v-card flat>
+              <qriously v-model="qrJson" :size=200 />
+            </v-card>
+          </v-card>
+          <v-card flat>
+            <div v-for="(item, index) in errorMessages" :key="index">
+              <div v-if="item!==true" class="errorLabel">{{ item }}</div>
+            </div>
+            <v-card-title>
+              <h3>Send</h3>
+            </v-card-title>
+            <div style="margin: 4px 20px;">
+              <v-text-field
+                label="Address"
+                v-model="sendCoinInfo.address"
+                required
+                placeholder="SADW6WXZVIUWIJ6RAWFSM4F4SJRUBRVOARXXIFSH" />
+              <v-text-field
+                label="NEM"
+                v-model="sendCoinInfo.amount"
+                type="number"
+                required />
+              <v-text-field
+                label="Message"
+                v-model="sendCoinInfo.message"
+                :counter="1024"
+                placeholder="Hello" />
+            </div>
+            <v-flex>
+              <v-btn
+                color="blue"
+                class="white--text"
+                @click="onSend()"
+                :loading="isLoading"
+                :disabled="isLoading">SEND</v-btn>
+            </v-flex>
+            <v-flex>
+              <v-card-title>
+                <h3>Result</h3>
+              </v-card-title>
+              <p v-html="resultMessage"/>
+            </v-flex>
+            <v-flex>
+              <v-card-actions>
+                <v-card-title>
+                  <h3>Transaction history</h3>
+                </v-card-title>
+                <v-spacer />
+                <v-btn
+                  fab
+                  small
+                  flat
+                  @click="onLoadTransactionHistory()"
+                  :loading="isLoading"><v-icon>cached</v-icon></v-btn>
+              </v-card-actions>
+              <div style="margin: 4px 20px;">
+                <v-data-table
+                  :headers="headers"
+                  :items="transactionHistory"
+                  :pagination.sync="pagination"
+                  hide-actions
+                  no-data-text="">
+                  <template 
+                    slot="items"
+                    slot-scope="props">
+                    <tr @click="onClick(props.item)">
+                      <td>{{ props.item.amount }}</td>
+                      <td>{{ props.item.hash }}</td>
+                      <td>{{ props.item.date | dateFormat }}</td>
+                    </tr>
+                  </template>
+                </v-data-table> 
+                <v-btn
+                  color="deep-orange lighten-3"
+                  class="white--text"
+                  @click="onLoadTransactionHistory()"
+                  :loading="isLoading"
+                  :disabled="isLoading">NEXT</v-btn>
+              </div>
+            </v-flex>
+          </v-card>
+        </v-container>
+      </v-card>
+    </v-flex>
   </div>
 </template>
 
 <script lang="ts">
-import { Component, Vue, Inject } from 'vue-property-decorator'
+import { Component, Vue, Inject, Watch } from 'vue-property-decorator'
+import { mapState } from 'vuex'
+import { format } from 'date-fns'
 import { FetchLoadBalanceUseCase } from '@/domain/usecase/FetchLoadBalanceUseCase'
 import { FetchLoadWalletUseCase } from '@/domain/usecase/FetchLoadWalletUseCase'
 import { FetchSendCoinUseCase } from '@/domain/usecase/FetchSendCoinUseCase'
 import { FetchLoadTransactionHistoryUseCase } from '@/domain/usecase/FetchLoadTransactionHistoryUseCase'
+import { Wallet } from '@/domain/entity/Wallet'
+import { TransactionHistory } from '@/domain/entity/TransactionHistory'
+import { NemHelper } from '@/domain/helper/NemHelper'
 
-@Component
+@Component({
+  name: 'HomePage',
+  computed: mapState(['isLoading']),
+	filters: {
+		dateFormat(date: Date) {
+			return format(date, 'YYYY/MM/DD HH:mm:ss')
+    },
+	},
+})
 export default class HomePage extends Vue {
   @Inject('FetchLoadBalanceUseCase') fetchLoadBalanceUseCase!: FetchLoadBalanceUseCase
   @Inject('FetchLoadWalletUseCase') fetchLoadWalletUseCase!: FetchLoadWalletUseCase
   @Inject('FetchSendCoinUseCase') fetchSendCoinUseCase!: FetchSendCoinUseCase
   @Inject('FetchLoadTransactionHistoryUseCase') fetchLoadTransactionHistoryUseCase!: FetchLoadTransactionHistoryUseCase
 
+  balance: number = 0
+  sendCoinInfo: { address: string, amount: number, message: string } = { address: '', amount: 0, message: '' }
+  wallet: Wallet | null = null
+  qrJson: string = ''
+
+  errorMessages: any[] = []
+  resultMessage: string = ''
+
+  headers: Array<{ text: string, value: string }> = [
+    { text: 'amount', value: 'amount' },
+    { text: 'txHash', value: 'hash' },
+    { text: 'date', value: 'date' },
+  ]
+  pagination: any = {
+    sortBy: 'date',
+    descending: true,
+    rowsPerPage: -1,
+  }
+  transactionHistory: TransactionHistory[] = []
+  transactionId?: string
+
+  @Watch('wallet.address')
+  onValueChange(newValue: string, oldValue: string): void {
+    this.qrJson = NemHelper.qrJson(2, 2, 'nem2-wallet', newValue, 0, '')
+  }
+
   mounted() {
+    Vue.prototype.$toast('Hello NEM2 wallet')
     this.configure()
   }
 
   async configure() {
-    const wallet = await this.fetchLoadWalletUseCase.execute()
-    const balance = await this.onLoadBalance(wallet.address!)
-
     try {
-      const history = await this.fetchLoadTransactionHistoryUseCase.execute(20)
-      console.log(history)
+      this.wallet = await this.fetchLoadWalletUseCase.execute()
+      await this.onLoadBalance()
+      await this.onLoadTransactionHistory()
     } catch (error) {
       console.error(error)
     }
   }
 
-  async onLoadBalance(addr: string) {
+  async onLoadBalance() {
+    this.$store.commit('startLoading')
     try {
-      const balance = await this.fetchLoadBalanceUseCase.execute(addr)
-      console.log('balance', balance)
+      if (this.wallet === null) { return }
+      this.balance = await this.fetchLoadBalanceUseCase.execute(this.wallet!.address!)
+      console.log('balance', this.balance)
     } catch (error) {
       console.error('balance', error)
     }
+    this.$store.commit('stopLoading')
   }
 
   async onSend() {
-    const wallet = await this.fetchLoadWalletUseCase.execute()
-    const address = 'SADW6WXZVIUWIJ6RAWFSM4F4SJRUBRVOARXXIFSH'
-    const amount = 1
-    const message = 'Hello'
+    this.$store.commit('startLoading')
     try {
-      const result = await this.fetchSendCoinUseCase.execute(address, amount, message)
+      this.resultMessage = ''
+      if (this.validation().length !== 0) {
+        throw new Error('Cloud not send coin.')
+       }
+      const wallet = await this.fetchLoadWalletUseCase.execute()
+      const result = await this.fetchSendCoinUseCase.execute(this.sendCoinInfo.address, Number(this.sendCoinInfo.amount), this.sendCoinInfo.message)
       console.log('sendCoin', result)
+      this.resultMessage = result
     } catch (error) {
       console.error('sendCoin', error)
+      this.resultMessage = error.message
     }
+    this.$store.commit('stopLoading')
+  }
+
+  async onLoadTransactionHistory() {
+    this.$store.commit('startLoading')
+    try {
+      const history = await this.fetchLoadTransactionHistoryUseCase.execute(20, this.transactionId)
+      console.log('history', history)
+      if (history.length !== 0) {
+        this.transactionId = history[history.length - 1].id
+      }
+      this.transactionHistory.push(...history)
+      console.log('onLoadTransactionHistory', this.transactionHistory, this.transactionId )
+    } catch (error) {
+      console.error('onLoadTransactionHistory', error)
+    }
+    this.$store.commit('stopLoading')
+  }
+
+  validation(): string[] {
+    this.errorMessages = []
+    console.log(this.sendCoinInfo)
+    if (this.sendCoinInfo.address.length !== 40) {
+      this.errorMessages.push('Address (except "-") is 40 characters')
+    }
+    if (!/^[a-zA-Z0-9-]+$/.test(this.sendCoinInfo.address)) {
+      this.errorMessages.push('Invalid input')
+    }
+    if (this.sendCoinInfo.message.length > 1024) {
+      this.errorMessages.push('Maximum number of characters in message has exceeded')
+    }
+    return this.errorMessages
+  }
+
+  clear() {
+    this.sendCoinInfo = { address: '', amount: 0, message: '' }
   }
 }
 </script>
+<style lang="stylus" scoped>
+.homepage
+  word-break break-all
+
+.errorLabel
+  color red
+</style>

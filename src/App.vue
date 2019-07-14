@@ -1,10 +1,14 @@
 <template>
-  <v-app>
+  <div id="app">
     <header>
       <span>{{ title }} </span>
     </header>
-    <router-view/>
-  </v-app>
+    <v-content class="main__content">
+      <v-fade-transition mode="out-in">
+        <router-view/>
+      </v-fade-transition>
+    </v-content>
+  </div>
 </template>
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator'
@@ -46,4 +50,7 @@ header span
   box-sizing border-box
   padding-top 16px
   text-align left
+
+.main__content
+  margin 8px
 </style>

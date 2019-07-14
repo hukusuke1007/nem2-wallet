@@ -1,15 +1,14 @@
 import { AccountHttp, MosaicHttp, MosaicService, Account, Address,
    TransferTransaction, Deadline, NetworkCurrencyMosaic, PlainMessage, TransactionHttp,
    PublicAccount, QueryParams, TransactionInfo } from 'nem2-sdk'
+import { mergeMap, map } from 'rxjs/operators'
+import { ZoneId } from 'js-joda'
 import { NemBlockchainWrapper } from '@/infrastructure/wrapper/NemBlockchainWrapper'
 import { Wallet } from '@/domain/entity/Wallet'
-import { mergeMap, map } from 'rxjs/operators'
 import { TransactionHistory } from '@/domain/entity/TransactionHistory'
 import { NemHelper } from '@/domain/helper/NemHelper'
-import { ZoneId } from 'js-joda'
 
 export class CatapultWrapper implements NemBlockchainWrapper {
-
   endpoint: string
   host: string
   port: string
