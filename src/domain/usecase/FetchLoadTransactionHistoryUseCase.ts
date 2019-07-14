@@ -1,11 +1,12 @@
 import { TransactionRepository } from '@/domain/repository/TransactionRepository'
 import { WalletRepository } from '@/domain/repository/WalletRepository'
+import { TransactionHistory } from '@/domain/entity/TransactionHistory'
 
-export interface FetchSendCoinUseCase {
-  execute(address: string, amount: number, message: string): Promise<string>
+export interface FetchLoadTransactionHistoryUseCase {
+  execute(limit: number, id?: string): Promise<TransactionHistory[]>
 }
 
-export class FetchSendCoinUseCaseImpl implements FetchSendCoinUseCase {
+export class FetchLoadTransactionHistoryUseCaseImpl implements FetchLoadTransactionHistoryUseCase {
   private transactionRepository: TransactionRepository
   private walletRepository: WalletRepository
 
@@ -14,13 +15,14 @@ export class FetchSendCoinUseCaseImpl implements FetchSendCoinUseCase {
     this.walletRepository = walletRepository
   }
 
-  async execute(address: string, amount: number, message?: string) {
+  async execute(limit: number, id?: string) {
     try {
       const wallet = await this.walletRepository.loadWallet()
-      const privateKey = wallet!.privateKey!
-      return await this.transactionRepository.sendAsset(privateKey, address, amount, message)
+      const publicKey = wallet!.publicKey!
+      return await this.transactionRepository.transactionHistory(publicKey, limit, id)
     } catch (error) {
       throw error
     }
   }
 }
+

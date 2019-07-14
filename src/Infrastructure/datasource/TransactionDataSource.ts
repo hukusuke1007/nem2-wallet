@@ -1,16 +1,25 @@
 import { TransactionRepository } from '@/domain/repository/TransactionRepository'
-import { BlockchainWrapper } from '@/infrastructure/wrapper/BlockchainWrapper'
+import { NemBlockchainWrapper } from '@/infrastructure/wrapper/NemBlockchainWrapper'
+import { TransactionHistory } from '@/domain/entity/TransactionHistory'
 
 export class TransactionDataSource implements TransactionRepository {
-  private wrapper: BlockchainWrapper
+  private wrapper: NemBlockchainWrapper
 
-  constructor(wrapper: BlockchainWrapper) {
+  constructor(wrapper: NemBlockchainWrapper) {
     this.wrapper = wrapper
   }
 
-  async sendAsset(privateKey: string, toAddress: string, amount: number, message: string): Promise<any> {
+  async sendAsset(privateKey: string, toAddress: string, amount: number, message: string) {
     try {
       return await this.wrapper.sendAsset(privateKey, toAddress, amount, message)
+    } catch (error) {
+      throw error
+    }
+  }
+
+  async transactionHistory(publicKey: string, limit: number, id?: string) {
+    try {
+      return await this.wrapper.transactionHistory(publicKey, limit, id)
     } catch (error) {
       throw error
     }

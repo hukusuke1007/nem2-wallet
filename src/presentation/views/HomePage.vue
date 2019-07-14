@@ -8,12 +8,14 @@ import { Component, Vue, Inject } from 'vue-property-decorator'
 import { FetchLoadBalanceUseCase } from '@/domain/usecase/FetchLoadBalanceUseCase'
 import { FetchLoadWalletUseCase } from '@/domain/usecase/FetchLoadWalletUseCase'
 import { FetchSendCoinUseCase } from '@/domain/usecase/FetchSendCoinUseCase'
+import { FetchLoadTransactionHistoryUseCase } from '@/domain/usecase/FetchLoadTransactionHistoryUseCase'
 
 @Component
 export default class HomePage extends Vue {
   @Inject('FetchLoadBalanceUseCase') fetchLoadBalanceUseCase!: FetchLoadBalanceUseCase
   @Inject('FetchLoadWalletUseCase') fetchLoadWalletUseCase!: FetchLoadWalletUseCase
   @Inject('FetchSendCoinUseCase') fetchSendCoinUseCase!: FetchSendCoinUseCase
+  @Inject('FetchLoadTransactionHistoryUseCase') fetchLoadTransactionHistoryUseCase!: FetchLoadTransactionHistoryUseCase
 
   mounted() {
     this.configure()
@@ -21,8 +23,14 @@ export default class HomePage extends Vue {
 
   async configure() {
     const wallet = await this.fetchLoadWalletUseCase.execute()
-    // await this.onSend()
     const balance = await this.onLoadBalance(wallet.address!)
+
+    try {
+      const history = await this.fetchLoadTransactionHistoryUseCase.execute(20)
+      console.log(history)
+    } catch (error) {
+      console.error(error)
+    }
   }
 
   async onLoadBalance(addr: string) {

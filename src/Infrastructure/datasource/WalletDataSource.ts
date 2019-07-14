@@ -1,25 +1,25 @@
 import { WalletRepository } from '@/domain/repository/WalletRepository'
-import { BlockchainWrapper } from '@/infrastructure/wrapper/BlockchainWrapper'
+import { NemBlockchainWrapper } from '@/infrastructure/wrapper/NemBlockchainWrapper'
 import { Wallet } from '@/domain/entity/Wallet'
 import localForage from 'localforage'
 
 export class WalletDataSource implements WalletRepository {
 
-  private wrapper: BlockchainWrapper
+  private wrapper: NemBlockchainWrapper
   private localStorageKey: string
 
-  constructor(wrapper: BlockchainWrapper) {
+  constructor(wrapper: NemBlockchainWrapper) {
     this.wrapper = wrapper
     this.localStorageKey = 'nem2-wallet'
   }
 
-  async createWallet(): Promise<Wallet> {
+  async createWallet() {
     const wallet = this.wrapper.createAccount()
     await localForage.setItem(this.localStorageKey, wallet.toJSON())
     return wallet
   }
 
-  async loadWallet(): Promise<Wallet | undefined> {
+  async loadWallet() {
     const item: any = await localForage.getItem(this.localStorageKey)
     console.log('loadWallet', item)
     if (item !== null) {
@@ -34,7 +34,7 @@ export class WalletDataSource implements WalletRepository {
     }
   }
 
-  async loadBalance(addr: string): Promise<number> {
+  async loadBalance(addr: string) {
     console.log('loadBalance')
     try {
       return await this.wrapper.loadBalance(addr)

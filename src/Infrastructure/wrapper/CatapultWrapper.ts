@@ -1,10 +1,14 @@
 import { AccountHttp, MosaicHttp, MosaicService, Account, Address,
-   TransferTransaction, Deadline, NetworkCurrencyMosaic, PlainMessage, TransactionHttp } from 'nem2-sdk'
-import { BlockchainWrapper } from '@/infrastructure/wrapper/BlockchainWrapper'
+   TransferTransaction, Deadline, NetworkCurrencyMosaic, PlainMessage, TransactionHttp,
+   PublicAccount, QueryParams, TransactionInfo } from 'nem2-sdk'
+import { NemBlockchainWrapper } from '@/infrastructure/wrapper/NemBlockchainWrapper'
 import { Wallet } from '@/domain/entity/Wallet'
-import { mergeMap } from 'rxjs/operators'
+import { mergeMap, map } from 'rxjs/operators'
+import { TransactionHistory } from '@/domain/entity/TransactionHistory'
+import { NemHelper } from '@/domain/helper/NemHelper'
+import { ZoneId } from 'js-joda'
 
-export class CatapultWrapper implements BlockchainWrapper {
+export class CatapultWrapper implements NemBlockchainWrapper {
 
   endpoint: string
   host: string
@@ -30,15 +34,14 @@ export class CatapultWrapper implements BlockchainWrapper {
     console.log(this.host, this.port, this.network, this.endpoint, this.networkGenerationHash)
   }
 
-  createAccount(): Wallet {
+  createAccount() {
     const account = Account.generateNewAccount(this.network)
-    console.log('createAccount', account)
-    const result = new Wallet()
-    result.address = account.address.plain()
-    result.privateKey = account.privateKey
-    result.publicKey = account.publicKey
-    result.networkType = account.address.networkType.valueOf()
-    return result
+    return new Wallet(
+      account.address.plain(),
+      account.publicKey,
+      account.privateKey,
+      account.address.networkType.valueOf(),
+    )
   }
 
   async loadBalance(addr: string) {
@@ -49,8 +52,7 @@ export class CatapultWrapper implements BlockchainWrapper {
           mergeMap((_) => _ ),
         ).subscribe(
           (mosaic) => resolve(mosaic.relativeAmount()),
-          (error) => reject(error),
-        )
+          (error) => reject(error))
     })
   }
 
@@ -68,12 +70,38 @@ export class CatapultWrapper implements BlockchainWrapper {
     // console.log('signedTransaction', signedTransaction)
     return new Promise((resolve, reject) => {
       this.transactionHttp
-      .announce(signedTransaction)
-      .subscribe(
-        (response) => resolve(response),
-        (error) => reject(error),
-      )
+        .announce(signedTransaction)
+        .pipe(
+          map((item) => item.message),
+        )
+        .subscribe(
+          (response) => resolve(response),
+          (error) => reject(error))
     })
   }
 
+  async transactionHistory(publicKey: string, limit: number, id?: string) {
+    const publicAccount = PublicAccount.createFromPublicKey(publicKey, this.network)
+    return new Promise((resolve, reject) => {
+      this.accountHttp.transactions(publicAccount, new QueryParams(limit, id))
+        .pipe(
+          map((items) => items.filter((item) => item instanceof TransferTransaction)
+            .map((item) => item as TransferTransaction)
+            .filter((item) => item.transactionInfo !== undefined && item.transactionInfo instanceof TransactionInfo)
+            .map((item) => new TransactionHistory(
+              item.transactionInfo!.id,
+              item.mosaics.length !== 0 ? item.mosaics[0].amount.compact() / NemHelper.divisibility() : 0,  // ココ暫定. 後回し.
+              item.maxFee.compact(),
+              item.recipient instanceof Address ? item.recipient.plain() : '',
+              item.signer !== undefined ? item.signer!.address.plain() : '',
+              item.message.payload,
+              new Date(item.deadline.value.atZone(ZoneId.SYSTEM).toInstant().toEpochMilli()),
+              item,
+              item.transactionInfo!.hash,
+            ))),
+        ).subscribe(
+          (response) => resolve(response),
+          (error) => reject(error))
+    })
+  }
 }

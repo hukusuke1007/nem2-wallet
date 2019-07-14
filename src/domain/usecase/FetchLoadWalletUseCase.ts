@@ -13,7 +13,7 @@ export class FetchLoadWalletUseCaseImpl implements FetchLoadWalletUseCase {
     this.repository = repository
   }
 
-  async execute(): Promise<Wallet> {
+  async execute() {
     const wallet = await this.repository.loadWallet()
     return wallet !== undefined ? wallet : await this.repository.createWallet()
   }

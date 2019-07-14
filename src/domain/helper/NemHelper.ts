@@ -1,6 +1,6 @@
 import encoding from 'encoding-japanese'
 
-export class CatapultHelper {
+export class NemHelper {
   static qrJson(v: number, type: number, name: string, addr: string, amount: number, msg: string) {
     const params = { type, data: { name, addr, amount: amount * this.divisibility(), msg }, v }
     return encoding.codeToString(encoding.convert(this.getStr2Array(JSON.stringify(params)), 'UTF8'))

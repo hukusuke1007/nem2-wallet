@@ -2,6 +2,7 @@
 import { FetchLoadBalanceUseCaseImpl } from '@/domain/usecase/FetchLoadBalanceUseCase'
 import { FetchLoadWalletUseCaseImpl } from '@/domain/usecase/FetchLoadWalletUseCase'
 import { FetchSendCoinUseCaseImpl } from '@/domain/usecase/FetchSendCoinUseCase'
+import { FetchLoadTransactionHistoryUseCaseImpl } from '@/domain/usecase/FetchLoadTransactionHistoryUseCase'
 
 /** DataSource */
 import { WalletDataSource } from '@/infrastructure/datasource/WalletDataSource'
@@ -20,4 +21,5 @@ export const provide = {
   FetchLoadBalanceUseCase: new FetchLoadBalanceUseCaseImpl(walletDataSource),
   FetchLoadWalletUseCase: new FetchLoadWalletUseCaseImpl(walletDataSource),
   FetchSendCoinUseCase: new FetchSendCoinUseCaseImpl(transactionDataSource, walletDataSource),
+  FetchLoadTransactionHistoryUseCase: new FetchLoadTransactionHistoryUseCaseImpl(transactionDataSource, walletDataSource),
 }

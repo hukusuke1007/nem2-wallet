@@ -3,14 +3,14 @@ export class Wallet {
   address?: string
   publicKey?: string
   privateKey?: string
-  networkType: number
+  networkType?: number
 
-  constructor() {
+  constructor(address?: string, publicKey?: string, privateKey?: string, networkType?: number) {
     this.balance = 0
-    this.address = undefined
-    this.publicKey = undefined
-    this.privateKey = undefined
-    this.networkType = 0
+    this.address = address
+    this.publicKey = publicKey
+    this.privateKey = privateKey
+    this.networkType = networkType
   }
 
   toJSON(): any {

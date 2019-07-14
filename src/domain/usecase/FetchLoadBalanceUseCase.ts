@@ -10,7 +10,7 @@ export class FetchLoadBalanceUseCaseImpl implements FetchLoadBalanceUseCase {
     this.repository = repository
   }
 
-  async execute(addr: string): Promise<number> {
+  async execute(addr: string) {
     try {
       return await this.repository.loadBalance(addr)
     } catch (error) {
