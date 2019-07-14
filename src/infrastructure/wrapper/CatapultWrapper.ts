@@ -96,8 +96,8 @@ export class CatapultWrapper implements NemBlockchainWrapper {
               item.signer !== undefined ? item.signer!.address.plain() : '',
               item.message.payload,
               new Date(item.deadline.value.atZone(ZoneId.SYSTEM).toInstant().toEpochMilli()),
-              item,
               item.transactionInfo!.hash,
+              item,
             ))),
         ).subscribe(
           (response) => resolve(response),
