@@ -1,7 +1,7 @@
 import { WalletRepository } from '@/domain/repository/WalletRepository'
 
 export interface FetchLoadBalanceUseCase {
-  execute(): Promise<number>
+  execute(addr: string): Promise<number>
 }
 
 export class FetchLoadBalanceUseCaseImpl implements FetchLoadBalanceUseCase {
@@ -10,8 +10,12 @@ export class FetchLoadBalanceUseCaseImpl implements FetchLoadBalanceUseCase {
     this.repository = repository
   }
 
-  async execute(): Promise<number> {
-    return this.repository.loadBalance()
+  async execute(addr: string): Promise<number> {
+    try {
+      return await this.repository.loadBalance(addr)
+    } catch (error) {
+      throw error
+    }
   }
 }
 

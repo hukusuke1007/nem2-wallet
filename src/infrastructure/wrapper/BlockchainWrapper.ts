@@ -2,7 +2,6 @@ import { Wallet } from '@/domain/entity/Wallet'
 
 export interface BlockchainWrapper {
   createAccount(): Wallet
-  loadAccount(address: string): Promise<any>
-  sendCoin(): Promise<any>
-  sendAsset(): Promise<any>
+  loadBalance(addr: string): Promise<any>
+  sendAsset(privateKey: string, toAddress: string, amount: number, message?: string): Promise<any>
 }

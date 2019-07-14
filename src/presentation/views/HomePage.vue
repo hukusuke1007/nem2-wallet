@@ -16,19 +16,35 @@ export default class HomePage extends Vue {
   @Inject('FetchSendCoinUseCase') fetchSendCoinUseCase!: FetchSendCoinUseCase
 
   mounted() {
-    this.loadBalance()
-    this.fetchLoadWalletUseCase.execute()
+    this.configure()
   }
 
-  async loadBalance() {
-    await this.fetchLoadBalanceUseCase.execute()
+  async configure() {
+    const wallet = await this.fetchLoadWalletUseCase.execute()
+    // await this.onSend()
+    const balance = await this.onLoadBalance(wallet.address!)
   }
 
-  async sendCoin() {
-    const address = ''
-    const amount = 0
-    const message = ''
-    await this.fetchSendCoinUseCase.execute(address, amount, message)
+  async onLoadBalance(addr: string) {
+    try {
+      const balance = await this.fetchLoadBalanceUseCase.execute(addr)
+      console.log('balance', balance)
+    } catch (error) {
+      console.error('balance', error)
+    }
+  }
+
+  async onSend() {
+    const wallet = await this.fetchLoadWalletUseCase.execute()
+    const address = 'SADW6WXZVIUWIJ6RAWFSM4F4SJRUBRVOARXXIFSH'
+    const amount = 1
+    const message = 'Hello'
+    try {
+      const result = await this.fetchSendCoinUseCase.execute(address, amount, message)
+      console.log('sendCoin', result)
+    } catch (error) {
+      console.error('sendCoin', error)
+    }
   }
 }
 </script>

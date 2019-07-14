@@ -34,8 +34,12 @@ export class WalletDataSource implements WalletRepository {
     }
   }
 
-  async loadBalance(): Promise<number> {
+  async loadBalance(addr: string): Promise<number> {
     console.log('loadBalance')
-    return 0
+    try {
+      return await this.wrapper.loadBalance(addr)
+    } catch (error) {
+      throw error
+    }
   }
 }

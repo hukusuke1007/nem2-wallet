@@ -1,0 +1,14 @@
+# Network
+#  MAIN_NET = 104
+#  TEST_NET = 152
+#  MIJIN = 96
+#  MIJIN_TEST = 144
+NETWORK = 144
+
+# Node URL
+NODE_HOST = 'http://localhost:3000'
+NODE_PORT = '3000'
+
+# Generation hash
+# ex. http://localhost:3000/block/1 is meta.generationHash
+NETWORK_GENERATION_HASH = 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
