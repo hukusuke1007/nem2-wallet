@@ -21,8 +21,11 @@ git clone https://github.com/hukusuke1007/nem2-wallet.git
 cd nem2-wallet
 ```
 
-
 Rename dotenvsample file to .env file.
+
+```sh
+mv dotenvsample .env
+```
 
 Set the following catapult network in .env file.
 
