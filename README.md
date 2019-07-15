@@ -22,7 +22,8 @@ Please set the following catapult network in .env file.
 - NODE_HOST
 - NODE_PORT
 - NETWORK_GENERATION_HASH
-
+- FAUCET_URL
+- EXPLORER_URL
 
 Please run commands.
 

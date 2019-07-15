@@ -12,6 +12,10 @@
             <div>
               <table border="1" class="table__list">
                 <tr>
+                  <td width="15%" class="table__key">net</td>
+                  <td width="85%" class="table__value">{{ network.net }}</td>
+                </tr>
+                <tr>
                   <td width="15%" class="table__key">endpoint</td>
                   <td width="85%" class="table__value">
                     <a :href="network.explorer" target="_blank">{{ network.endpoint }}</a>
@@ -177,7 +181,8 @@ export default class HomePage extends Vue {
   errorMessages: any[] = []
   resultMessage: string = ''
 
-  network: {endpoint: string, explorer: string, faucetUrl: string} = {
+  network: {net: string, endpoint: string, explorer: string, faucetUrl: string} = {
+    net: NemHelper.networkLabel(Number(process.env.NETWORK)),
     endpoint: `${process.env.NODE_HOST}:${process.env.NODE_PORT}`,
     explorer: `${process.env.EXPLORER_URL}`,
     faucetUrl: process.env.FAUCET_URL,

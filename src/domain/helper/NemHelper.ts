@@ -10,6 +10,21 @@ export class NemHelper {
     return Math.pow(10, 6)
   }
 
+  static networkLabel(network: number) {
+    switch (network) {
+      case 104:
+        return 'MAIN_NET'
+      case 152:
+        return 'TEST_NET'
+      case 96:
+        return 'MIJIN'
+      case 144:
+        return 'MIJIN_TEST'
+      default:
+        return 'Unknow'
+    }
+  }
+
   private static getStr2Array(str: string) {
     const array = []
     for (let i = 0; i < str.length; i++) {
