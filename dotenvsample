@@ -6,9 +6,15 @@
 NETWORK = 144
 
 # Node URL
-NODE_HOST = 'https://jp5.nemesis.land'
-NODE_PORT = '3001'
+NODE_HOST = 'http://elephant.48gh23s.xyz'
+NODE_PORT = '3000'
 
 # Generation hash
-# ex. http://localhost:3000/block/1 is meta.generationHash
-NETWORK_GENERATION_HASH = '9F1979BEBA29C47E59B40393ABB516801A353CFC0C18BC241FEDE41939C907E7'
+# ex. http://elephant.48gh23s.xyz:3000/block/1 is meta.generationHash
+NETWORK_GENERATION_HASH = 'FA90D13C1A54ACF8326692EF7D3E7BA63B9914F7699286DFD3112BD72988778A'
+
+# Faucet. It cloud get a xem of catapult.
+FAUCET_URL = 'https://planethouki.github.io/nem/faucet/elephant.html'
+
+# Blockchain explorer.
+EXPLORER_URL = 'http://explorer48gh23s.z31.web.core.windows.net/?host=elephant.48gh23s.xyz:3000'

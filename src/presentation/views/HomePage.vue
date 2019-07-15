@@ -6,6 +6,27 @@
           <v-card flat>
             <v-card-actions>
               <v-card-title>
+                <h3>Network</h3>
+              </v-card-title>
+            </v-card-actions>
+            <div>
+              <table border="1" class="table__list">
+                <tr>
+                  <td width="15%" class="table__key">endpoint</td>
+                  <td width="85%" class="table__value">
+                    <a :href="network.explorer" target="_blank">{{ network.endpoint }}</a>
+                  </td>
+                </tr>
+                <tr>
+                  <td width="15%" class="table__key">faucet</td>
+                  <td width="85%" class="table__value">
+                    <a :href="network.faucetUrl" target="_blank">{{ network.faucetUrl }}</a>
+                  </td>
+                </tr>
+              </table>
+            </div>
+            <v-card-actions>
+              <v-card-title>
                 <h3>Balance</h3>
               </v-card-title>
               <v-spacer />
@@ -17,9 +38,11 @@
                 :loading="isLoading"><v-icon>cached</v-icon></v-btn>
             </v-card-actions>
             <v-card-text>{{ balance }} xem</v-card-text>
-            <v-card-title>
-              <h3>Address</h3>
-            </v-card-title>
+            <v-card-actions>
+              <v-card-title>
+                <h3>Address</h3>
+              </v-card-title>
+            </v-card-actions>
             <v-card-text>{{ wallet.address }}</v-card-text>
             <v-card flat>
               <qriously v-model="qrJson" :size=200 />
@@ -32,10 +55,12 @@
             </div>
           </v-card>
           <v-card flat>
-            <v-card-title>
-              <h3>Send</h3>
-            </v-card-title>
-            <div style="margin: 4px 20px;">
+            <v-card-actions>
+              <v-card-title>
+                <h3>Send</h3>
+              </v-card-title>
+            </v-card-actions>
+            <div style="margin: 4px 26px;">
               <v-text-field
                 label="Address"
                 v-model="sendCoinInfo.address"
@@ -60,9 +85,11 @@
                 :disabled="isLoading">SEND</v-btn>
             </v-flex>
             <v-flex>
-              <v-card-title>
-                <h3>Result</h3>
-              </v-card-title>
+              <v-card-actions>
+                <v-card-title>
+                  <h3>Result</h3>
+                </v-card-title>
+              </v-card-actions>
               <div v-for="(item, index) in errorMessages" :key="index">
                 <div v-if="item!==true" class="errorLabel">{{ item }}</div>
               </div>
@@ -79,7 +106,7 @@
                   fab
                   small
                   flat
-                  @click="onLoadTransactionHistory()"
+                  @click="onLoadTransactionHistory(true)"
                   :loading="isLoading"><v-icon>cached</v-icon></v-btn>
               </v-card-actions>
               <div style="margin: 4px 20px;">
@@ -150,6 +177,12 @@ export default class HomePage extends Vue {
   errorMessages: any[] = []
   resultMessage: string = ''
 
+  network: {endpoint: string, explorer: string, faucetUrl: string} = {
+    endpoint: `${process.env.NODE_HOST}:${process.env.NODE_PORT}`,
+    explorer: `${process.env.EXPLORER_URL}`,
+    faucetUrl: process.env.FAUCET_URL,
+  }
+
   headers: Array<{ text: string, value: string }> = [
     { text: 'amount', value: 'amount' },
     { text: 'txHash', value: 'hash' },
@@ -218,9 +251,13 @@ export default class HomePage extends Vue {
     console.log('onClick', item)
   }
 
-  async onLoadTransactionHistory() {
+  async onLoadTransactionHistory(initLoad: boolean = false) {
     this.$store.commit('startLoading')
     try {
+      if (initLoad === true) {
+        this.transactionHistory = []
+        this.transactionId = undefined
+      }
       const history = await this.fetchLoadTransactionHistoryUseCase.execute(20, this.transactionId)
       console.log('history', history)
       if (history.length !== 0) {
@@ -260,4 +297,17 @@ export default class HomePage extends Vue {
 
 .errorLabel
   color red
+
+.table
+  &__list
+    margin 0 auto
+  &__key
+    font-size 16px
+    text-align center
+    padding 8px
+  &__value
+    font-size 16px
+    text-align right
+    padding 8px
+
 </style>

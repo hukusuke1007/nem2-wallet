@@ -7,7 +7,7 @@
 
 [https://hukusuke1007.github.io/nem2-wallet/](https://hukusuke1007.github.io/nem2-wallet/)
 
-<a href="https://imgur.com/Ki3FN7K"><img src="https://i.imgur.com/Ki3FN7K.png" width="50%" height="50%" /></a>
+<a href="https://imgur.com/sPzK063"><img src="https://i.imgur.com/sPzK063.png" width="50%" height="50%" /></a>
 
 
 ## Usage for developer
