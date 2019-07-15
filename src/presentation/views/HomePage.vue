@@ -32,9 +32,6 @@
             </div>
           </v-card>
           <v-card flat>
-            <div v-for="(item, index) in errorMessages" :key="index">
-              <div v-if="item!==true" class="errorLabel">{{ item }}</div>
-            </div>
             <v-card-title>
               <h3>Send</h3>
             </v-card-title>
@@ -52,7 +49,6 @@
               <v-text-field
                 label="Message"
                 v-model="sendCoinInfo.message"
-                :counter="1024"
                 placeholder="Hello" />
             </div>
             <v-flex>
@@ -67,6 +63,9 @@
               <v-card-title>
                 <h3>Result</h3>
               </v-card-title>
+              <div v-for="(item, index) in errorMessages" :key="index">
+                <div v-if="item!==true" class="errorLabel">{{ item }}</div>
+              </div>
               <p v-html="resultMessage"/>
             </v-flex>
             <v-flex>
@@ -74,6 +73,7 @@
                 <v-card-title>
                   <h3>Transaction history</h3>
                 </v-card-title>
+                {{ transactionHistory.length }}
                 <v-spacer />
                 <v-btn
                   fab
@@ -104,7 +104,7 @@
                   class="white--text"
                   @click="onLoadTransactionHistory()"
                   :loading="isLoading"
-                  :disabled="isLoading">NEXT</v-btn>
+                  :disabled="isLoading">MORE</v-btn>
               </div>
             </v-flex>
           </v-card>
