@@ -9,6 +9,8 @@
 
 <a href="https://imgur.com/sPzK063"><img src="https://i.imgur.com/sPzK063.png" width="50%" height="50%" /></a>
 
+## Usage for application user
+T.B.D
 
 ## Usage for developer
 
@@ -16,7 +18,7 @@
 
 Rename dotenvsample file to .env file.
 
-Please set the following catapult network in .env file.
+Set the following catapult network in .env file.
 
 - NETWORK
 - NODE_HOST
@@ -25,7 +27,7 @@ Please set the following catapult network in .env file.
 - FAUCET_URL
 - EXPLORER_URL
 
-Please run commands.
+Run commands.
 
 ```sh
 # Install libraries
