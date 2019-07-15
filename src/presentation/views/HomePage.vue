@@ -24,6 +24,12 @@
             <v-card flat>
               <qriously v-model="qrJson" :size=200 />
             </v-card>
+            <div>
+              <a href="#" @click="() => isShowPrivateKey = !isShowPrivateKey">Show PrivateKey</a>
+              <div style="margin: 8px;" v-if="isShowPrivateKey">
+                {{ wallet.privateKey }}
+              </div>
+            </div>
           </v-card>
           <v-card flat>
             <div v-for="(item, index) in errorMessages" :key="index">
@@ -140,6 +146,7 @@ export default class HomePage extends Vue {
   wallet: Wallet | null = null
   qrJson: string = ''
 
+  isShowPrivateKey: boolean = false
   errorMessages: any[] = []
   resultMessage: string = ''
 
@@ -205,6 +212,10 @@ export default class HomePage extends Vue {
     }
     Vue.prototype.$toast(this.resultMessage)
     this.$store.commit('stopLoading')
+  }
+
+  onClick(item: TransactionHistory) {
+    console.log('onClick', item)
   }
 
   async onLoadTransactionHistory() {
