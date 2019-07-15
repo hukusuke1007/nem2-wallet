@@ -14,7 +14,13 @@ T.B.D
 
 ## Usage for developer
 
-### Project setup
+Clone project.
+
+```sh
+git clone https://github.com/hukusuke1007/nem2-wallet.git
+cd nem2-wallet
+```
+
 
 Rename dotenvsample file to .env file.
 
@@ -33,7 +39,7 @@ Run commands.
 # Install libraries
 $ yarn install
 
-# Run in localhost
+# Run localhost
 $ yarn serve
 ```
 
