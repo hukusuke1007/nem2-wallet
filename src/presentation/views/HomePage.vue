@@ -198,11 +198,12 @@ export default class HomePage extends Vue {
       const wallet = await this.fetchLoadWalletUseCase.execute()
       const result = await this.fetchSendCoinUseCase.execute(this.sendCoinInfo.address, Number(this.sendCoinInfo.amount), this.sendCoinInfo.message)
       console.log('sendCoin', result)
-      this.resultMessage = result
+      this.resultMessage = `SUCCESS: ${result.hash}`
     } catch (error) {
       console.error('sendCoin', error)
-      this.resultMessage = error.message
+      this.resultMessage = `FAILED: ${error.message}`
     }
+    Vue.prototype.$toast(this.resultMessage)
     this.$store.commit('stopLoading')
   }
 

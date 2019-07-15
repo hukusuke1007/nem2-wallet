@@ -4,9 +4,10 @@ import { AccountHttp, MosaicHttp, MosaicService, Account, Address,
 import { mergeMap, map } from 'rxjs/operators'
 import { ZoneId } from 'js-joda'
 import { NemBlockchainWrapper } from '@/infrastructure/wrapper/NemBlockchainWrapper'
+import { NemHelper } from '@/domain/helper/NemHelper'
 import { Wallet } from '@/domain/entity/Wallet'
 import { TransactionHistory } from '@/domain/entity/TransactionHistory'
-import { NemHelper } from '@/domain/helper/NemHelper'
+import { SendAssetResult } from '@/domain/entity/SendAssetResult'
 
 export class CatapultWrapper implements NemBlockchainWrapper {
   endpoint: string
@@ -63,15 +64,13 @@ export class CatapultWrapper implements NemBlockchainWrapper {
         [NetworkCurrencyMosaic.createRelative(amount)],
         message !== undefined ? PlainMessage.create(message) : PlainMessage.create(''),
         this.network)
-    // console.log('transferTransaction', transferTransaction)
     const account = Account.createFromPrivateKey(privateKey, this.network)
     const signedTransaction = account.sign(transferTransaction, this.networkGenerationHash)
-    // console.log('signedTransaction', signedTransaction)
     return new Promise((resolve, reject) => {
       this.transactionHttp
         .announce(signedTransaction)
         .pipe(
-          map((item) => item.message),
+          map((item) => new SendAssetResult(signedTransaction.hash, item.message)),
         )
         .subscribe(
           (response) => resolve(response),
