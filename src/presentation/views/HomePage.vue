@@ -126,7 +126,8 @@
                     <tr @click="onClick(props.item)">
                       <td>{{ props.item.amount }}</td>
                       <td>{{ props.item.hash }}</td>
-                      <td>{{ props.item.date | dateFormat }}</td>
+                      <td>{{ props.item.message }}</td>
+                      <!-- <td>{{ props.item.date | dateFormat }}</td> -->
                     </tr>
                   </template>
                 </v-data-table> 
@@ -191,8 +192,10 @@ export default class HomePage extends Vue {
   headers: Array<{ text: string, value: string }> = [
     { text: 'amount', value: 'amount' },
     { text: 'txHash', value: 'hash' },
-    { text: 'date', value: 'date' },
+    { text: 'message', value: 'message' },
+    // { text: 'date', value: 'date' },
   ]
+
   pagination: any = {
     sortBy: 'date',
     descending: true,
@@ -254,6 +257,7 @@ export default class HomePage extends Vue {
 
   onClick(item: TransactionHistory) {
     console.log('onClick', item)
+    this.$router.push({ name: 'transaction_page', params: { transactionId: item.id } })
   }
 
   async onLoadTransactionHistory(initLoad: boolean = false) {
@@ -263,7 +267,7 @@ export default class HomePage extends Vue {
         this.transactionHistory = []
         this.transactionId = undefined
       }
-      const history = await this.fetchLoadTransactionHistoryUseCase.execute(20, this.transactionId)
+      const history = await this.fetchLoadTransactionHistoryUseCase.executeTransferHistoryAll(20, this.transactionId)
       console.log('history', history)
       if (history.length !== 0) {
         this.transactionId = history[history.length - 1].id

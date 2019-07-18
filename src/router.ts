@@ -1,6 +1,7 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 import HomePage from './presentation/views/HomePage.vue'
+import TransactionPage from './presentation/views/TransactionPage.vue'
 
 Vue.use(Router)
 
@@ -12,6 +13,12 @@ export default new Router({
       path: '/',
       name: 'home_page',
       component: HomePage,
+    },
+    {
+      path: '/transaction_page/:transactionId',
+      name: 'transaction_page',
+      component: TransactionPage,
+      props: true,
     },
   ],
 })

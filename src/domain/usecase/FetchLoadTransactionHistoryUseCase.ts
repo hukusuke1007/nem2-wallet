@@ -3,7 +3,8 @@ import { WalletRepository } from '@/domain/repository/WalletRepository'
 import { TransactionHistory } from '@/domain/entity/TransactionHistory'
 
 export interface FetchLoadTransactionHistoryUseCase {
-  execute(limit: number, id?: string): Promise<TransactionHistory[]>
+  executeTransferHistory(id: string): Promise<TransactionHistory>
+  executeTransferHistoryAll(limit: number, id?: string): Promise<TransactionHistory[]>
 }
 
 export class FetchLoadTransactionHistoryUseCaseImpl implements FetchLoadTransactionHistoryUseCase {
@@ -15,11 +16,19 @@ export class FetchLoadTransactionHistoryUseCaseImpl implements FetchLoadTransact
     this.walletRepository = walletRepository
   }
 
-  async execute(limit: number, id?: string) {
+  async executeTransferHistory(id: string) {
+    try {
+      return await this.transactionRepository.transactionHistory(id)
+    } catch (error) {
+      throw error
+    }
+  }
+
+  async executeTransferHistoryAll(limit: number, id?: string) {
     try {
       const wallet = await this.walletRepository.loadWallet()
       const publicKey = wallet!.publicKey!
-      return await this.transactionRepository.transactionHistory(publicKey, limit, id)
+      return await this.transactionRepository.transactionHistoryAll(publicKey, limit, id)
     } catch (error) {
       throw error
     }

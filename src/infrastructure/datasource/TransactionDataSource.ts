@@ -16,9 +16,17 @@ export class TransactionDataSource implements TransactionRepository {
     }
   }
 
-  async transactionHistory(publicKey: string, limit: number, id?: string) {
+  async transactionHistory(id: string) {
     try {
-      return await this.wrapper.transactionHistory(publicKey, limit, id)
+      return await this.wrapper.transactionHistory(id)
+    } catch (error) {
+      throw error
+    }
+  }
+
+  async transactionHistoryAll(publicKey: string, limit: number, id?: string) {
+    try {
+      return await this.wrapper.transactionHistoryAll(publicKey, limit, id)
     } catch (error) {
       throw error
     }
