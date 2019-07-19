@@ -41,7 +41,7 @@ export default class AssetExchangePage extends Vue {
 
   async testtest() {
     try {
-      const assetName = 'ticket'
+      const assetName = 'shohei_ticket'
       const maxAmount = 10000
       const supplyMutable = true
       const transferable = true

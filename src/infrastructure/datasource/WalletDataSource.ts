@@ -49,4 +49,12 @@ export class WalletDataSource implements WalletRepository {
       throw error
     }
   }
+
+  async loadNamespacesFromAccount(addr: string) {
+    try {
+      return await this.wrapper.loadNamespacesFromAccount(addr)
+    } catch (error) {
+      throw error
+    }
+  }
 }

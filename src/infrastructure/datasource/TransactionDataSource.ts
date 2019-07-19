@@ -49,6 +49,14 @@ export class TransactionDataSource implements TransactionRepository {
     }
   }
 
+  async createSubNamespace(subName: string, rootName: string, privateKey: string) {
+    try {
+      return await this.wrapper.createSubNamespace(subName, rootName, privateKey)
+    } catch (error) {
+      throw error
+    }
+  }
+
   async createMosaic(privateKey: string, asset: AssetCreation) {
     try {
       return await this.wrapper.createMosaic(privateKey, asset.maxAmount, asset.supplyMutable, asset.transferable, asset.divisibility, asset.durationCount)

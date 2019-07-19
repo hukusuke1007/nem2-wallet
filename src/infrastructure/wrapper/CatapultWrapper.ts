@@ -147,21 +147,54 @@ export class CatapultWrapper implements NemBlockchainWrapper {
     })
   }
 
+  async loadNamespacesFromAccount(addr: string) {
+    return new Promise((resolve, reject) => {
+      const address = Address.createFromRawAddress(addr)
+      this.namespaceHttp.getNamespacesFromAccount(address)
+        .subscribe(
+          (response) => {
+            console.log('loadNamespacesFromAccount', response)
+            resolve(response)
+          },
+          (error) => reject(error))
+    })
+  }
+
   async createNamespace(name: string, privateKey: string) {
     return new Promise((resolve, reject) => {
+      const rentalBlock = 365 * 86400 / 15
       const registerNamespaceTransaction = RegisterNamespaceTransaction.createRootNamespace(
         Deadline.create(),
         name,
-        UInt64.fromUint(1000),
-        this.network)
+        UInt64.fromUint(rentalBlock),
+        this.network,
+        UInt64.fromUint(100 * NemHelper.divisibility()))
       const account = Account.createFromPrivateKey(privateKey, this.network)
       const signedTransaction = account.sign(registerNamespaceTransaction, this.networkGenerationHash)
+      console.log('createNamespace', rentalBlock, signedTransaction)
       this.transactionHttp.announce(signedTransaction)
           .subscribe(
             (response) => {
               console.log('createNamespace', response)
               resolve(response.message)
             },
+            (error) => reject(error))
+    })
+  }
+
+  async createSubNamespace(subName: string, rootName: string, privateKey: string) {
+    return new Promise((resolve, reject) => {
+      const registerNamespaceTransaction = RegisterNamespaceTransaction.createSubNamespace(
+        Deadline.create(),
+        subName,
+        rootName,
+        this.network)
+      const account = Account.createFromPrivateKey(privateKey, this.network)
+      const signedTransaction = account.sign(registerNamespaceTransaction, this.networkGenerationHash)
+      console.log('createSubNamespace', registerNamespaceTransaction, signedTransaction)
+      this.transactionHttp.announce(signedTransaction)
+          .subscribe(
+            (response) => resolve(response.message),
             (error) => reject(error))
     })
   }
@@ -199,7 +232,7 @@ export class CatapultWrapper implements NemBlockchainWrapper {
           .subscribe(
             (response) => {
               console.log('createMosaic', response, mosaicDefinitionTransaction.mosaicId)
-              resolve(mosaicDefinitionTransaction.mosaicId)
+              resolve(mosaicDefinitionTransaction.mosaicId.id.toHex())
             },
             (error) => reject(error))
     })
@@ -220,7 +253,7 @@ export class CatapultWrapper implements NemBlockchainWrapper {
       this.transactionHttp.announce(signedTransaction)
           .subscribe(
             (response) => {
-              console.log('registeNamespaceToAddress', response)
+              console.log('registeNamespaceToAddress', addressAliasTransaction, response)
               resolve(response.message)
             },
             (error) => reject(error))
@@ -254,6 +287,10 @@ export class CatapultWrapper implements NemBlockchainWrapper {
       let transactions: TransferTransaction[] = []
       this.accountHttp.transactions(publicAccount, query)
         .pipe(
+          map((items) => {
+            console.log('_transactionHistory', items)
+            return items
+          }),
           mergeMap((items) => transactions = items.filter((item) => item instanceof TransferTransaction)
             .map((item) => item as TransferTransaction)
             .filter((item) => item.transactionInfo !== undefined && item.transactionInfo instanceof TransactionInfo)),
@@ -270,7 +307,7 @@ export class CatapultWrapper implements NemBlockchainWrapper {
                 item.recipient instanceof Address ? item.recipient.plain() : '',
                 item.signer !== undefined ? item.signer!.address.plain() : '',
                 item.message.payload,
-                new Date(targetBlock.timestamp.compact()),  // ここ暫定、ネメシスブロックの時間がわからんw
+                targetBlock !== undefined ? new Date(targetBlock.timestamp.compact()) : new Date(),  // ここ暫定、ネメシスブロックの時間がわからんw
                 item.transactionInfo!.hash,
                 item)
             })

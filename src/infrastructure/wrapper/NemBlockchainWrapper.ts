@@ -10,7 +10,9 @@ export interface NemBlockchainWrapper {
   transactionHistory(id: string): Promise<TransactionHistory | any>
   transactionHistoryAll(publicKey: string, limit: number, id?: string): Promise<TransactionHistory[] | any>
   checkNamespace(name: string): Promise<any>
+  loadNamespacesFromAccount(addr: string): Promise<any>
   createNamespace(name: string, privateKey: string): Promise<string | any>
+  createSubNamespace(subName: string, rootName: string, privateKey: string): Promise<string | any>
   createMosaic(privateKey: string, maxAmount: number, supplyMutable: boolean, transferable: boolean, divisibility: number, durationCount?: number): Promise<string | any>
   registeNamespaceToAddress(name: string, addr: string, privateKey: string): Promise<string | any>
   registeMosaicToNamespace(name: string, mosaicName: string, privateKey: string): Promise<string | any>
