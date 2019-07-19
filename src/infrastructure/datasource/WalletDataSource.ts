@@ -34,6 +34,14 @@ export class WalletDataSource implements WalletRepository {
     }
   }
 
+  async loadAccount(addr: string) {
+    try {
+      return await this.wrapper.loadAccount(addr)
+    } catch (error) {
+      throw error
+    }
+  }
+
   async loadBalance(addr: string) {
     try {
       return await this.wrapper.loadBalance(addr)
