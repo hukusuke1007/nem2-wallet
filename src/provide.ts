@@ -12,10 +12,11 @@ import { TransactionDataSource } from '@/infrastructure/datasource/TransactionDa
 import { CatapultWrapper } from '@/infrastructure/wrapper/CatapultWrapper'
 
 const host = process.env.NODE_HOST
+const ws = process.env.NODE_WS
 const port = process.env.NODE_PORT
 const network: number = Number(process.env.NETWORK)
 const generateHash = process.env.NETWORK_GENERATION_HASH
-const blockchainWrapper = new CatapultWrapper(host, port, network, generateHash)
+const blockchainWrapper = new CatapultWrapper(host, ws, port, network, generateHash)
 const walletDataSource = new WalletDataSource(blockchainWrapper)
 const transactionDataSource = new TransactionDataSource(blockchainWrapper)
 

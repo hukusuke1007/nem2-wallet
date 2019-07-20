@@ -7,6 +7,7 @@ NETWORK = 144
 
 # Node URL
 NODE_HOST = 'http://elephant.48gh23s.xyz'
+NODE_WS = 'ws://lephant.48gh23s.xyz'
 NODE_PORT = '3000'
 
 # Generation hash

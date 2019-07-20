@@ -1,6 +1,7 @@
 import { TransactionRepository } from '@/domain/repository/TransactionRepository'
 import { NemBlockchainWrapper } from '@/infrastructure/wrapper/NemBlockchainWrapper'
 import { AssetCreation } from '@/domain/entity/AssetCreation'
+import { AggregateEscrow } from '@/domain/entity/AggregateEscrow'
 
 export class TransactionDataSource implements TransactionRepository {
   private wrapper: NemBlockchainWrapper
@@ -12,6 +13,22 @@ export class TransactionDataSource implements TransactionRepository {
   async sendAsset(privateKey: string, toAddress: string, amount: number, message: string) {
     try {
       return await this.wrapper.sendAsset(privateKey, toAddress, amount, message)
+    } catch (error) {
+      throw error
+    }
+  }
+
+  async requestAggregateEscrowAsset(dto: AggregateEscrow) {
+    try {
+      return await this.wrapper.requestAggregateEscrowAsset(dto.receiverPrivateKey, dto.sendAmount, dto.distributorPublicKey, dto.mosaicAmount, dto.mosaicName, dto.mosaicNamespaceName)
+    } catch (error) {
+      throw error
+    }
+  }
+
+  async consigAggregate(privateKey: string) {
+    try {
+      return await this.wrapper.consigAggregate(privateKey)
     } catch (error) {
       throw error
     }
@@ -33,9 +50,17 @@ export class TransactionDataSource implements TransactionRepository {
     }
   }
 
-  async checkNamespace(name: string) {
+  async unconfirmedTransactions(publicKey: string, limit: number, id?: string) {
     try {
-      return await this.wrapper.checkNamespace(name)
+      return await this.wrapper.unconfirmedTransactions(publicKey, limit, id)
+    } catch (error) {
+      throw error
+    }
+  }
+
+  async loadNamespace(name: string) {
+    try {
+      return await this.wrapper.loadNamespace(name)
     } catch (error) {
       throw error
     }
