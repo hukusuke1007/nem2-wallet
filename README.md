@@ -40,10 +40,10 @@ Run commands.
 
 ```sh
 # Install libraries
-$ yarn install
+yarn install
 
 # Run localhost
-$ yarn serve
+yarn serve
 ```
 
 ## Reference
