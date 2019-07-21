@@ -31,14 +31,13 @@ export class FetchAssetExchangeUseCaseImpl implements FetchAssetExchangeUseCase 
       console.log('account', account)
 
       // アグリゲートトランザクションの確認
-
       // const aggregateEscrowAsset = await this.transactionRepository.requestAggregateEscrowAsset(aggregateEscrow)
       // console.log('aggregateEscrowAsset', aggregateEscrowAsset)
-      // const unconfirmedTransactions = await this.transactionRepository.unconfirmedTransactions(publicKey, 20)
-      // console.log('unconfirmedTransactions', unconfirmedTransactions)
+      const unconfirmedTransactions = await this.transactionRepository.unconfirmedTransactions(publicKey, 20)
+      console.log('unconfirmedTransactions', unconfirmedTransactions)
 
-      // const consig = await this.transactionRepository.consigAggregate('335C1693B34AAD11A56FB8187E13A98BDE9467EBA3BAFEB04E8D6437AFC5F7A0')
-      // console.log('consig', consig)
+      const consig = await this.transactionRepository.consigAggregate('335C1693B34AAD11A56FB8187E13A98BDE9467EBA3BAFEB04E8D6437AFC5F7A0')
+      console.log('consig', consig)
 
       // const loadNamespacesFromAccount = await this.walletRepository.loadNamespacesFromAccount(address)
       // console.log('loadNamespacesFromAccount', loadNamespacesFromAccount)

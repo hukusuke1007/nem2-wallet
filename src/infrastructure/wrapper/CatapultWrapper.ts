@@ -130,10 +130,10 @@ export class CatapultWrapper implements NemBlockchainWrapper {
         ],
         this.network)
       const signedTransaction = receiverAccount.sign(aggregateTransaction, this.networkGenerationHash)
-      console.log('Aggregate Transaction Hash: ' + signedTransaction.hash)
+      console.log('Aggregate Transaction: ', signedTransaction.hash)
       const hashLockTransaction = HashLockTransaction.create(
         Deadline.create(),
-        NetworkCurrencyMosaic.createRelative(sendAmount),
+        NetworkCurrencyMosaic.createRelative(10),
         UInt64.fromUint(480),
         signedTransaction,
         this.network)
@@ -141,10 +141,11 @@ export class CatapultWrapper implements NemBlockchainWrapper {
       const listener = new Listener(this.wsEndpoint, WebSocket)
       listener.open().then(() => {
         this.transactionHttp
-            .announce(hashLockTransactionSigned)
-            .subscribe((x) => console.log('hashLockTransactionSigned', x), (error) => reject(error))
-        listener
-            .confirmed(receiverAccount.address)
+          .announce(hashLockTransactionSigned)
+          .subscribe((x) => {
+            console.log('hashLockTransactionSigned', x)
+          }, (error) => reject(error))
+        listener.confirmed(receiverAccount.address)
             .pipe(
               map((items) => {
                 console.log('listener confirmed', items)
@@ -153,16 +154,16 @@ export class CatapultWrapper implements NemBlockchainWrapper {
               filter((transaction) => transaction.transactionInfo !== undefined
                   && transaction.transactionInfo.hash === hashLockTransactionSigned.hash),
               mergeMap((ignored) => this.transactionHttp.announceAggregateBonded(signedTransaction)),
-            )
-            .subscribe(
+            ).subscribe(
               (announcedAggregateBonded) => {
                 console.log('announcedAggregateBonded', announcedAggregateBonded)
-                resolve(announcedAggregateBonded)
+                resolve(signedTransaction.hash)
                 listener.close()
               },
               (error) => {
                 console.error('listener confirmed', error)
                 reject(error)
+                listener.close()
               })
       }).catch((error) => {
         console.error('listener', error)
@@ -191,8 +192,8 @@ export class CatapultWrapper implements NemBlockchainWrapper {
         )
         .subscribe(
           (announcedTransaction) =>  {
-            console.log(announcedTransaction)
-            resolve(announcedTransaction)
+            console.log('announcedTransaction', announcedTransaction.message)
+            resolve(announcedTransaction.message)
           }, (error) => {
             console.error(error)
             reject(error)
@@ -250,6 +251,26 @@ export class CatapultWrapper implements NemBlockchainWrapper {
         (response) => resolve(response),
         (error) => reject(error))
       })
+  }
+
+  async aggregateBondedTransactions(publicKey: string, limit: number, id?: string) {
+    return new Promise((resolve, reject) => {
+      const publicAccount = PublicAccount.createFromPublicKey(publicKey, this.network)
+      this.accountHttp.aggregateBondedTransactions(publicAccount, new QueryParams(limit, id, Order.DESC))
+        .pipe(
+          map((items) => {
+            console.log('aggregateBondedTransactions', items)
+            return items
+          }),
+        ).subscribe(
+          (response) =>  {
+            console.log('aggregateBondedTransactions', response)
+            resolve(response)
+          }, (error) => {
+            console.error(error)
+            reject(error)
+          })
+        })
   }
 
   async loadNamespace(name: string) {

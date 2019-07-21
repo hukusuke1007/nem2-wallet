@@ -58,6 +58,14 @@ export class TransactionDataSource implements TransactionRepository {
     }
   }
 
+  async aggregateBondedTransactions(publicKey: string, limit: number, id?: string) {
+    try {
+      return await this.wrapper.aggregateBondedTransactions(publicKey, limit, id)
+    } catch (error) {
+      throw error
+    }
+  }
+
   async loadNamespace(name: string) {
     try {
       return await this.wrapper.loadNamespace(name)
