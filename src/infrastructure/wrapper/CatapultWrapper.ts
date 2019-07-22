@@ -71,8 +71,8 @@ export class CatapultWrapper implements NemBlockchainWrapper {
   }
 
   async loadBalance(addr: string) {
-    const address = Address.createFromRawAddress(addr)
     return new Promise((resolve, reject) => {
+      const address = Address.createFromRawAddress(addr)
       this.mosaicService.mosaicsAmountViewFromAddress(address)
         .pipe(
           mergeMap((_) => _ ),
@@ -81,6 +81,31 @@ export class CatapultWrapper implements NemBlockchainWrapper {
             console.log('mosaicsAmountViewFromAddress', mosaic)
             resolve(mosaic.relativeAmount()) },
           (error) => reject(error))
+    })
+  }
+
+  async loadStatus(addr: string, hash: string) {
+    return new Promise((resolve, reject) => {
+      const address = Address.createFromRawAddress(addr)
+      const listener = new Listener(this.wsEndpoint, WebSocket)
+      listener.open().then(() => {
+        listener.status(address)
+          .pipe(
+            filter((item) => item.hash === hash),
+          ).subscribe((response) => {
+            console.error('loadStatus status', response)
+            listener.close()
+            reject(response)
+        })
+        listener.unconfirmedAdded(address)
+          .pipe(
+            filter((item) => (item.transactionInfo !== undefined && item.transactionInfo.hash === hash)),
+          ).subscribe((response) => {
+            console.log('loadStatus unconfirmedAdded' , response)
+            listener.close()
+            resolve(response)
+        })
+      })
     })
   }
 
@@ -301,23 +326,25 @@ export class CatapultWrapper implements NemBlockchainWrapper {
 
   async createNamespace(name: string, privateKey: string) {
     return new Promise((resolve, reject) => {
-      const rentalBlock = 365 * 86400 / 15
+      const rentalBlock = 1000 // 20 * 86400 / 15 // duration ≈ numberOfDays * 86400 / blockGenerationTargetTime
       const registerNamespaceTransaction = RegisterNamespaceTransaction.createRootNamespace(
         Deadline.create(),
         name,
         UInt64.fromUint(rentalBlock),
-        this.network,
-        UInt64.fromUint(100 * NemHelper.divisibility()))
+        this.network)
       const account = Account.createFromPrivateKey(privateKey, this.network)
       const signedTransaction = account.sign(registerNamespaceTransaction, this.networkGenerationHash)
-      console.log('createNamespace', rentalBlock, signedTransaction)
+      // console.log('createNamespace', rentalBlock, signedTransaction)
+      // status
+      this.loadStatus(account.address.plain(), signedTransaction.hash)
+        .then((response) => resolve(response))
+        .catch((error) => reject(error))
+
+      // announce
       this.transactionHttp.announce(signedTransaction)
-          .subscribe(
-            (response) => {
-              console.log('createNamespace', response)
-              resolve(response.message)
-            },
-            (error) => reject(error))
+        .subscribe(
+          (response) => console.log(response),
+          (error) => reject(error))
     })
   }
 
@@ -331,10 +358,16 @@ export class CatapultWrapper implements NemBlockchainWrapper {
       const account = Account.createFromPrivateKey(privateKey, this.network)
       const signedTransaction = account.sign(registerNamespaceTransaction, this.networkGenerationHash)
       console.log('createSubNamespace', registerNamespaceTransaction, signedTransaction)
+      // status
+      this.loadStatus(account.address.plain(), signedTransaction.hash)
+        .then((response) => resolve(response))
+        .catch((error) => reject(error))
+
+      // announce
       this.transactionHttp.announce(signedTransaction)
-          .subscribe(
-            (response) => resolve(response.message),
-            (error) => reject(error))
+        .subscribe(
+          (response) => console.log(response),
+          (error) => reject(error))
     })
   }
 

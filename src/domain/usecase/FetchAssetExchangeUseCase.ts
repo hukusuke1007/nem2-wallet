@@ -21,6 +21,7 @@ export class FetchAssetExchangeUseCaseImpl implements FetchAssetExchangeUseCase 
   // TODO: まだ実装途中
   async createAsset(asset: AssetCreation) {
     try {
+      console.log('asset', asset)
       const wallet = await this.walletRepository.loadWallet()
       if (wallet === undefined) { throw new Error('wallet is nothing..') }
       const privateKey = wallet!.privateKey!
@@ -30,14 +31,20 @@ export class FetchAssetExchangeUseCaseImpl implements FetchAssetExchangeUseCase 
       const account = await this.walletRepository.loadAccount(address)
       console.log('account', account)
 
+      // const status = await this.transactionRepository.loadNamespace(asset.namespace)
+      // console.log('status', status)
+
+      const createNamespace = await this.transactionRepository.createNamespace(asset.namespace, privateKey)
+      console.log('createNamespace', createNamespace)
+
       // アグリゲートトランザクションの確認
       // const aggregateEscrowAsset = await this.transactionRepository.requestAggregateEscrowAsset(aggregateEscrow)
       // console.log('aggregateEscrowAsset', aggregateEscrowAsset)
-      const unconfirmedTransactions = await this.transactionRepository.unconfirmedTransactions(publicKey, 20)
-      console.log('unconfirmedTransactions', unconfirmedTransactions)
+      // const unconfirmedTransactions = await this.transactionRepository.unconfirmedTransactions(publicKey, 20)
+      // console.log('unconfirmedTransactions', unconfirmedTransactions)
 
-      const consig = await this.transactionRepository.consigAggregate('335C1693B34AAD11A56FB8187E13A98BDE9467EBA3BAFEB04E8D6437AFC5F7A0')
-      console.log('consig', consig)
+      // const consig = await this.transactionRepository.consigAggregate('335C1693B34AAD11A56FB8187E13A98BDE9467EBA3BAFEB04E8D6437AFC5F7A0')
+      // console.log('consig', consig)
 
       // const loadNamespacesFromAccount = await this.walletRepository.loadNamespacesFromAccount(address)
       // console.log('loadNamespacesFromAccount', loadNamespacesFromAccount)
@@ -50,8 +57,8 @@ export class FetchAssetExchangeUseCaseImpl implements FetchAssetExchangeUseCase 
       // console.log('createSubNamesoace', createSubNamesoace)
 
       // register
-      // const registeNamespaceToAddress = await this.transactionRepository.registeNamespaceToAddress(asset.namespace, address, privateKey)
-      // console.log('registeNamespaceToAddress', registeNamespaceToAddress)
+      const registeNamespaceToAddress = await this.transactionRepository.registeNamespaceToAddress(asset.namespace, address, privateKey)
+      console.log('registeNamespaceToAddress', registeNamespaceToAddress)
 
       // const mosaicId = await this.transactionRepository.createMosaic(privateKey, asset)
       // console.log('createMosaic', mosaicId)

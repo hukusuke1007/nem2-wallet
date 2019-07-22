@@ -10,6 +10,14 @@ export class TransactionDataSource implements TransactionRepository {
     this.wrapper = wrapper
   }
 
+  async loadStatus(addr: string) {
+    // try {
+    //   return await this.wrapper.loadStatus(addr)
+    // } catch (error) {
+    //   throw error
+    // }
+  }
+
   async sendAsset(privateKey: string, toAddress: string, amount: number, message: string) {
     try {
       return await this.wrapper.sendAsset(privateKey, toAddress, amount, message)

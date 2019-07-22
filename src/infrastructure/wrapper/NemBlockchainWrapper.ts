@@ -6,6 +6,7 @@ export interface NemBlockchainWrapper {
   createAccount(): Wallet
   loadAccount(addr: string): Promise<any>
   loadBalance(addr: string): Promise<number | any>
+  loadStatus(addr: string, hash: string): Promise<any>
   sendAsset(privateKey: string, toAddress: string, amount: number, message?: string): Promise<SendAssetResult | any>
   requestAggregateEscrowAsset(receiverPrivateKey: string, sendAmount: number, distributorPublicKey: string, mosaicAmount: number, mosaicName: string, mosaicNamespaceName: string): Promise<string | any>
   consigAggregate(privateKey: string): Promise<string | any>
@@ -15,7 +16,7 @@ export interface NemBlockchainWrapper {
   aggregateBondedTransactions(publicKey: string, limit: number, id?: string): Promise<any>
   loadNamespace(name: string): Promise<any>
   loadNamespacesFromAccount(addr: string): Promise<any>
-  createNamespace(name: string, privateKey: string): Promise<string | any>
+  createNamespace(name: string, privateKey: string): Promise<any>
   createSubNamespace(subName: string, rootName: string, privateKey: string): Promise<string | any>
   createMosaic(privateKey: string, maxAmount: number, supplyMutable: boolean, transferable: boolean, divisibility: number, durationCount?: number): Promise<string | any>
   registeNamespaceToAddress(name: string, addr: string, privateKey: string): Promise<string | any>
