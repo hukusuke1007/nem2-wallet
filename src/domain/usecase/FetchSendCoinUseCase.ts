@@ -1,9 +1,9 @@
 import { TransactionRepository } from '@/domain/repository/TransactionRepository'
 import { WalletRepository } from '@/domain/repository/WalletRepository'
-import { SendAssetResult } from '@/domain/entity/SendAssetResult'
+import { TransactionResult } from '@/domain/entity/TransactionResult'
 
 export interface FetchSendCoinUseCase {
-  execute(address: string, amount: number, message: string): Promise<SendAssetResult>
+  execute(address: string, amount: number, message: string): Promise<TransactionResult>
 }
 
 export class FetchSendCoinUseCaseImpl implements FetchSendCoinUseCase {

@@ -126,8 +126,8 @@
                     <tr @click="onClick(props.item)">
                       <td>{{ props.item.amount }}</td>
                       <td>{{ props.item.hash }}</td>
-                      <td>{{ props.item.message }}</td>
-                      <!-- <td>{{ props.item.date | dateFormat }}</td> -->
+                      <!-- <td>{{ props.item.message }}</td> -->
+                      <td>{{ props.item.date | dateFormat }}</td>
                     </tr>
                   </template>
                 </v-data-table> 
@@ -192,8 +192,8 @@ export default class HomePage extends Vue {
   headers: Array<{ text: string, value: string }> = [
     { text: 'amount', value: 'amount' },
     { text: 'txHash', value: 'hash' },
-    { text: 'message', value: 'message' },
-    // { text: 'date', value: 'date' },
+    // { text: 'message', value: 'message' },
+    { text: 'date', value: 'date' },
   ]
 
   pagination: any = {

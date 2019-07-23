@@ -3,14 +3,15 @@ import { AccountHttp, MosaicHttp, TransactionHttp, BlockHttp, MosaicService, Acc
    PublicAccount, QueryParams, TransactionInfo, Order, NamespaceHttp, NamespaceId, RegisterNamespaceTransaction, UInt64,
    AliasTransaction, AliasActionType,
    MosaicId, MosaicNonce, MosaicDefinitionTransaction, MosaicSupplyChangeTransaction, MosaicProperties, MosaicSupplyType,
-   AggregateTransaction, Mosaic, HashLockTransaction, Listener, CosignatureTransaction, CosignatureSignedTransaction } from 'nem2-sdk'
+   AggregateTransaction, Mosaic, HashLockTransaction, Listener, CosignatureTransaction, CosignatureSignedTransaction, TransactionStatusError } from 'nem2-sdk'
 import { mergeMap, map, combineAll, filter } from 'rxjs/operators'
 import { ZoneId } from 'js-joda'
 import { NemBlockchainWrapper } from '@/infrastructure/wrapper/NemBlockchainWrapper'
 import { NemHelper } from '@/domain/helper/NemHelper'
 import { Wallet } from '@/domain/entity/Wallet'
 import { TransactionHistory } from '@/domain/entity/TransactionHistory'
-import { SendAssetResult } from '@/domain/entity/SendAssetResult'
+import { TransactionResult } from '@/domain/entity/TransactionResult'
+import { TransactionError } from '@/domain/entity/TransactionError'
 
 export class CatapultWrapper implements NemBlockchainWrapper {
   endpoint: string
@@ -25,6 +26,7 @@ export class CatapultWrapper implements NemBlockchainWrapper {
   blockHttp: BlockHttp
   namespaceHttp: NamespaceHttp
   mosaicService: MosaicService
+  listener: Listener
 
   constructor(host: string, ws: string, port: string, network: number, networkGenerationHash: string) {
     this.host = host
@@ -42,6 +44,7 @@ export class CatapultWrapper implements NemBlockchainWrapper {
     this.transactionHttp = new TransactionHttp(this.endpoint)
     this.blockHttp = new BlockHttp(this.endpoint)
     this.namespaceHttp = new NamespaceHttp(this.endpoint)
+    this.listener = new Listener(this.wsEndpoint, WebSocket)
     console.log(this.host, this.port, this.network, this.endpoint, this.networkGenerationHash)
   }
 
@@ -70,7 +73,7 @@ export class CatapultWrapper implements NemBlockchainWrapper {
     })
   }
 
-  async loadBalance(addr: string) {
+  async loadBalance(addr: string): Promise<number> {
     return new Promise((resolve, reject) => {
       const address = Address.createFromRawAddress(addr)
       this.mosaicService.mosaicsAmountViewFromAddress(address)
@@ -84,32 +87,15 @@ export class CatapultWrapper implements NemBlockchainWrapper {
     })
   }
 
-  async loadStatus(addr: string, hash: string) {
-    return new Promise((resolve, reject) => {
-      const address = Address.createFromRawAddress(addr)
-      const listener = new Listener(this.wsEndpoint, WebSocket)
-      listener.open().then(() => {
-        listener.status(address)
-          .pipe(
-            filter((item) => item.hash === hash),
-          ).subscribe((response) => {
-            console.error('loadStatus status', response)
-            listener.close()
-            reject(response)
-        })
-        listener.unconfirmedAdded(address)
-          .pipe(
-            filter((item) => (item.transactionInfo !== undefined && item.transactionInfo.hash === hash)),
-          ).subscribe((response) => {
-            console.log('loadStatus unconfirmedAdded' , response)
-            listener.close()
-            resolve(response)
-        })
-      })
-    })
+  async loadStatus(addr: string, hash: string): Promise<TransactionResult> {
+    try {
+      return await this._loadStatus(addr, hash)
+    } catch (error) {
+      throw error
+    }
   }
 
-  async sendAsset(privateKey: string, toAddress: string, amount: number, message?: string) {
+  async sendAsset(privateKey: string, toAddress: string, amount: number, message?: string): Promise<TransactionResult> {
     const recipientAddress = Address.createFromRawAddress(toAddress)
     const transferTransaction = TransferTransaction.create(
         Deadline.create(),
@@ -120,18 +106,19 @@ export class CatapultWrapper implements NemBlockchainWrapper {
     const account = Account.createFromPrivateKey(privateKey, this.network)
     const signedTransaction = account.sign(transferTransaction, this.networkGenerationHash)
     return new Promise((resolve, reject) => {
+      // status
+      this._loadStatus(account.address.plain(), signedTransaction.hash)
+        .then((response) => resolve(response))
+        .catch((error) => reject(error))
       this.transactionHttp
         .announce(signedTransaction)
-        .pipe(
-          map((item) => new SendAssetResult(signedTransaction.hash, item.message)),
-        )
         .subscribe(
-          (response) => resolve(response),
+          (response) => console.log(response),
           (error) => reject(error))
     })
   }
 
-  async requestAggregateEscrowAsset(receiverPrivateKey: string, sendAmount: number, distributorPublicKey: string, mosaicAmount: number, mosaicName: string, mosaicNamespaceName: string) {
+  async requestAggregateEscrowAsset(receiverPrivateKey: string, sendAmount: number, distributorPublicKey: string, mosaicAmount: number, mosaicName: string, mosaicNamespaceName: string): Promise<TransactionResult> {
     return new Promise((resolve, reject) => {
       const receiverAccount = Account.createFromPrivateKey(receiverPrivateKey, this.network)
       const distributorPublicAccount = PublicAccount.createFromPublicKey(distributorPublicKey, this.network)
@@ -163,41 +150,34 @@ export class CatapultWrapper implements NemBlockchainWrapper {
         signedTransaction,
         this.network)
       const hashLockTransactionSigned = receiverAccount.sign(hashLockTransaction, this.networkGenerationHash)
-      const listener = new Listener(this.wsEndpoint, WebSocket)
-      listener.open().then(() => {
+      // const listener = new Listener(this.wsEndpoint, WebSocket)
+      this.listener.open().then(() => {
         this.transactionHttp
           .announce(hashLockTransactionSigned)
           .subscribe((x) => {
             console.log('hashLockTransactionSigned', x)
           }, (error) => reject(error))
-        listener.confirmed(receiverAccount.address)
-            .pipe(
-              map((items) => {
-                console.log('listener confirmed', items)
-                return items
-              }),
-              filter((transaction) => transaction.transactionInfo !== undefined
-                  && transaction.transactionInfo.hash === hashLockTransactionSigned.hash),
-              mergeMap((ignored) => this.transactionHttp.announceAggregateBonded(signedTransaction)),
-            ).subscribe(
-              (announcedAggregateBonded) => {
-                console.log('announcedAggregateBonded', announcedAggregateBonded)
-                resolve(signedTransaction.hash)
-                listener.close()
-              },
-              (error) => {
-                console.error('listener confirmed', error)
-                reject(error)
-                listener.close()
-              })
-      }).catch((error) => {
-        console.error('listener', error)
-        reject(error)
-      })
+        this.listener.confirmed(receiverAccount.address)
+          .pipe(
+            map((items) => {
+              console.log('listener confirmed', items)
+              return items
+            }),
+            filter((transaction) => transaction.transactionInfo !== undefined
+                && transaction.transactionInfo.hash === hashLockTransactionSigned.hash),
+            mergeMap((_) => this.transactionHttp.announceAggregateBonded(signedTransaction)),
+            map((_) => new TransactionResult('SUCCESS', hashLockTransactionSigned.hash)),
+          ).subscribe(
+            (response) => resolve(response),
+            (error) => {
+              console.error('listener confirmed', error)
+              reject(error)
+            })
+      }).catch((error) => reject(error))
     })
   }
 
-  async consigAggregate(privateKey: string) {
+  async consigAggregate(privateKey: string): Promise<TransactionResult> {
     return new Promise((resolve, reject) => {
       const cosignAggregateBondedTransaction = (transaction: AggregateTransaction, consigAccount: Account): CosignatureSignedTransaction => {
         const cosignatureTransaction = CosignatureTransaction.create(transaction)
@@ -206,27 +186,23 @@ export class CatapultWrapper implements NemBlockchainWrapper {
       const account = Account.createFromPrivateKey(privateKey, this.network)
       this.accountHttp.aggregateBondedTransactions(account.publicAccount)
         .pipe(
-          map((items) => {
-            console.log('consigAggregate', items)
-            return items
-          }),
+          // map((items) => {
+          //   console.log('consigAggregate', items)
+          //   return items
+          // }),
           mergeMap((_) => _),
           filter((_) => !_.signedByAccount(account.publicAccount)),
           map((transaction) => cosignAggregateBondedTransaction(transaction, account)),
           mergeMap((cosignatureSignedTransaction) => this.transactionHttp.announceAggregateBondedCosignature(cosignatureSignedTransaction)),
+          map((_) => new TransactionResult('SUCCESS')),
         )
         .subscribe(
-          (announcedTransaction) =>  {
-            console.log('announcedTransaction', announcedTransaction.message)
-            resolve(announcedTransaction.message)
-          }, (error) => {
-            console.error(error)
-            reject(error)
-          })
+          (response) => resolve(response),
+          (error) => reject(error))
         })
   }
 
-  async transactionHistory(id: string) {
+  async transactionHistory(id: string): Promise<TransactionHistory> {
     return new Promise((resolve, reject) => {
       let transaction: TransferTransaction
       this.transactionHttp.getTransaction(id)
@@ -245,7 +221,7 @@ export class CatapultWrapper implements NemBlockchainWrapper {
           transaction.recipient instanceof Address ? transaction.recipient.plain() : '',
           transaction.signer !== undefined ? transaction.signer!.address.plain() : '',
           transaction.message.payload,
-          new Date(block.timestamp.compact()),  // ここ暫定、ネメシスブロックの時間がわからんw
+          block !== undefined ? new Date(block.timestamp.compact() + Date.UTC(2016, 3, 1, 0, 0, 0, 0)) : undefined,
           transaction.transactionInfo!.hash,
           transaction)),
       ).subscribe(
@@ -254,7 +230,7 @@ export class CatapultWrapper implements NemBlockchainWrapper {
       })
   }
 
-  async transactionHistoryAll(publicKey: string, limit: number, id?: string) {
+  async transactionHistoryAll(publicKey: string, limit: number, id?: string): Promise<TransactionHistory[]> {
     try {
       const publicAccount = PublicAccount.createFromPublicKey(publicKey, this.network)
       return await this._transactionHistory(publicAccount, new QueryParams(limit, id, Order.DESC))
@@ -263,7 +239,8 @@ export class CatapultWrapper implements NemBlockchainWrapper {
     }
   }
 
-  async unconfirmedTransactions(publicKey: string, limit: number, id?: string) {
+  // TODO
+  async unconfirmedTransactions(publicKey: string, limit: number, id?: string): Promise<any[]> {
     return new Promise((resolve, reject) => {
       const publicAccount = PublicAccount.createFromPublicKey(publicKey, this.network)
       this.accountHttp.unconfirmedTransactions(publicAccount, new QueryParams(limit, id, Order.DESC))
@@ -278,7 +255,7 @@ export class CatapultWrapper implements NemBlockchainWrapper {
       })
   }
 
-  async aggregateBondedTransactions(publicKey: string, limit: number, id?: string) {
+  async aggregateBondedTransactions(publicKey: string, limit: number, id?: string): Promise<any[]> {
     return new Promise((resolve, reject) => {
       const publicAccount = PublicAccount.createFromPublicKey(publicKey, this.network)
       this.accountHttp.aggregateBondedTransactions(publicAccount, new QueryParams(limit, id, Order.DESC))
@@ -324,7 +301,7 @@ export class CatapultWrapper implements NemBlockchainWrapper {
     })
   }
 
-  async createNamespace(name: string, privateKey: string) {
+  async createNamespace(name: string, privateKey: string): Promise<TransactionResult> {
     return new Promise((resolve, reject) => {
       const rentalBlock = 1000 // 20 * 86400 / 15 // duration ≈ numberOfDays * 86400 / blockGenerationTargetTime
       const registerNamespaceTransaction = RegisterNamespaceTransaction.createRootNamespace(
@@ -334,13 +311,10 @@ export class CatapultWrapper implements NemBlockchainWrapper {
         this.network)
       const account = Account.createFromPrivateKey(privateKey, this.network)
       const signedTransaction = account.sign(registerNamespaceTransaction, this.networkGenerationHash)
-      // console.log('createNamespace', rentalBlock, signedTransaction)
       // status
-      this.loadStatus(account.address.plain(), signedTransaction.hash)
+      this._loadStatus(account.address.plain(), signedTransaction.hash)
         .then((response) => resolve(response))
         .catch((error) => reject(error))
-
-      // announce
       this.transactionHttp.announce(signedTransaction)
         .subscribe(
           (response) => console.log(response),
@@ -348,7 +322,7 @@ export class CatapultWrapper implements NemBlockchainWrapper {
     })
   }
 
-  async createSubNamespace(subName: string, rootName: string, privateKey: string) {
+  async createSubNamespace(subName: string, rootName: string, privateKey: string): Promise<TransactionResult> {
     return new Promise((resolve, reject) => {
       const registerNamespaceTransaction = RegisterNamespaceTransaction.createSubNamespace(
         Deadline.create(),
@@ -359,11 +333,9 @@ export class CatapultWrapper implements NemBlockchainWrapper {
       const signedTransaction = account.sign(registerNamespaceTransaction, this.networkGenerationHash)
       console.log('createSubNamespace', registerNamespaceTransaction, signedTransaction)
       // status
-      this.loadStatus(account.address.plain(), signedTransaction.hash)
+      this._loadStatus(account.address.plain(), signedTransaction.hash)
         .then((response) => resolve(response))
         .catch((error) => reject(error))
-
-      // announce
       this.transactionHttp.announce(signedTransaction)
         .subscribe(
           (response) => console.log(response),
@@ -371,7 +343,7 @@ export class CatapultWrapper implements NemBlockchainWrapper {
     })
   }
 
-  async createMosaic(privateKey: string, maxAmount: number, supplyMutable: boolean, transferable: boolean, divisibility: number, durationCount?: number) {
+  async createMosaic(privateKey: string, maxAmount: number, supplyMutable: boolean, transferable: boolean, divisibility: number, durationCount?: number): Promise<TransactionResult> {
     return new Promise((resolve, reject) => {
       const account = Account.createFromPrivateKey(privateKey, this.network)
       const nonce = MosaicNonce.createRandom()
@@ -398,19 +370,20 @@ export class CatapultWrapper implements NemBlockchainWrapper {
           mosaicSupplyChangeTransaction.toAggregate(account.publicAccount),
         ],
         this.network,
-        []);
+        [])
       const signedTransaction = account.sign(aggregateTransaction, this.networkGenerationHash)
+      // status
+      this._loadStatus(account.address.plain(), signedTransaction.hash)
+        .then((response) => resolve(response))
+        .catch((error) => reject(error))
       this.transactionHttp.announce(signedTransaction)
           .subscribe(
-            (response) => {
-              console.log('createMosaic', response, mosaicDefinitionTransaction.mosaicId)
-              resolve(mosaicDefinitionTransaction.mosaicId.id.toHex())
-            },
+            (response) => console.log('createMosaic', response, mosaicDefinitionTransaction.mosaicId),
             (error) => reject(error))
     })
   }
 
-  async registeNamespaceToAddress(name: string, addr: string, privateKey: string) {
+  async registeNamespaceToAddress(name: string, addr: string, privateKey: string): Promise<TransactionResult> {
     return new Promise((resolve, reject) => {
       const namespaceId = new NamespaceId(name)
       const address = Address.createFromRawAddress(addr)
@@ -422,17 +395,18 @@ export class CatapultWrapper implements NemBlockchainWrapper {
         this.network)
       const account = Account.createFromPrivateKey(privateKey, this.network)
       const signedTransaction = account.sign(addressAliasTransaction, this.networkGenerationHash)
+      // status
+      this._loadStatus(account.address.plain(), signedTransaction.hash)
+        .then((response) => resolve(response))
+        .catch((error) => reject(error))
       this.transactionHttp.announce(signedTransaction)
           .subscribe(
-            (response) => {
-              console.log('registeNamespaceToAddress', addressAliasTransaction, response)
-              resolve(response.message)
-            },
+            (response) => console.log('registeNamespaceToAddress', addressAliasTransaction, response),
             (error) => reject(error))
     })
   }
 
-  async registeMosaicToNamespace(name: string, mosaicName: string, privateKey: string) {
+  async registeMosaicToNamespace(name: string, mosaicName: string, privateKey: string): Promise<TransactionResult> {
     return new Promise((resolve, reject) => {
       const namespaceId = new NamespaceId(name)
       const mosaicId = new MosaicId(mosaicName)
@@ -444,13 +418,38 @@ export class CatapultWrapper implements NemBlockchainWrapper {
         this.network)
       const account = Account.createFromPrivateKey(privateKey, this.network)
       const signedTransaction = account.sign(mosaicAliasTransaction, this.networkGenerationHash)
+      // status
+      this._loadStatus(account.address.plain(), signedTransaction.hash)
+        .then((response) => resolve(response))
+        .catch((error) => reject(error))
+      // transactionHttp
       this.transactionHttp.announce(signedTransaction)
           .subscribe(
-            (response) => {
-              console.log('registeMosaicToNamespace', response)
-              resolve(response.message)
-            },
+            (response) => console.log('registeMosaicToNamespace', response),
             (error) => reject(error))
+    })
+  }
+  private _loadStatus(addr: string, hash: string): Promise<TransactionResult> {
+    return new Promise((resolve, reject) => {
+      const address = Address.createFromRawAddress(addr)
+      this.listener.open().then(() => {
+        this.listener.status(address)
+          .pipe(
+            filter((item) => item.hash === hash),
+            map((item) => new TransactionError(item.status, item.hash)),
+          ).subscribe((response) => {
+            console.error('loadStatus status', response)
+            reject(response)
+          })
+        this.listener.unconfirmedAdded(address)
+          .pipe(
+            filter((item) => (item.transactionInfo !== undefined && item.transactionInfo.hash === hash)),
+            map((item) => new TransactionResult('SUCCESS', item.transactionInfo!.hash!)),
+          ).subscribe((response) => {
+            console.log('loadStatus unconfirmedAdded' , response)
+            resolve(response)
+        })
+      })
     })
   }
 
@@ -459,19 +458,20 @@ export class CatapultWrapper implements NemBlockchainWrapper {
       let transactions: TransferTransaction[] = []
       this.accountHttp.transactions(publicAccount, query)
         .pipe(
-          map((items) => {
-            console.log('_transactionHistory', items)
-            return items
+          map((item) => {
+            if (item.length === 0) {
+              resolve([])
+            }
+            return item
           }),
           mergeMap((items) => transactions = items.filter((item) => item instanceof TransferTransaction)
             .map((item) => item as TransferTransaction)
             .filter((item) => item.transactionInfo !== undefined && item.transactionInfo instanceof TransactionInfo)),
-          map((item) => this.blockHttp.getBlockByHeight(item.transactionInfo!.height.compact())),
+          map((item) =>  this.blockHttp.getBlockByHeight(item.transactionInfo!.height.compact())),
           combineAll(),
           map((blocks) => {
-            console.log(blocks)
             return transactions.map((item) => {
-              const targetBlock = blocks.filter((block) => block.blockTransactionsHash === item.transactionInfo!.hash)[0]
+              const targetBlock = blocks.filter((block) => block.height.compact() === item.transactionInfo!.height.compact())[0]
               return new TransactionHistory(
                 item.transactionInfo!.id,
                 item.mosaics.length !== 0 ? item.mosaics[0].amount.compact() / NemHelper.divisibility() : 0,  // ココ暫定. 後回し.
@@ -479,7 +479,7 @@ export class CatapultWrapper implements NemBlockchainWrapper {
                 item.recipient instanceof Address ? item.recipient.plain() : '',
                 item.signer !== undefined ? item.signer!.address.plain() : '',
                 item.message.payload,
-                targetBlock !== undefined ? new Date(targetBlock.timestamp.compact()) : new Date(),  // ここ暫定、ネメシスブロックの時間がわからんw
+                targetBlock !== undefined ? new Date(targetBlock.timestamp.compact() + Date.UTC(2016, 3, 1, 0, 0, 0, 0)) : undefined,
                 item.transactionInfo!.hash,
                 item)
             })

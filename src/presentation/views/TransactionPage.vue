@@ -11,6 +11,10 @@
             <td width="70%" class="table__value">{{ transactionHistory.id }}</td>
           </tr>
           <tr>
+            <td width="30%" class="table__key">hash</td>
+            <td width="70%" class="table__value">{{ transactionHistory.hash }}</td>
+          </tr>
+          <tr>
             <td width="30%" class="table__key">fromAddress</td>
             <td width="70%" class="table__value">{{ transactionHistory.fromAddress }}</td>
           </tr>
@@ -29,6 +33,10 @@
           <tr>
             <td width="30%" class="table__key">message</td>
             <td width="70%" class="table__value">{{ transactionHistory.message }}</td>
+          </tr>
+          <tr>
+            <td width="30%" class="table__key">date</td>
+            <td width="70%" class="table__value">{{ transactionHistory.date | dateFormat }}</td>
           </tr>
         </table>
       </v-flex>
