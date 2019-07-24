@@ -14,7 +14,7 @@
 importScripts("https://storage.googleapis.com/workbox-cdn/releases/3.6.3/workbox-sw.js");
 
 importScripts(
-  "/nem2-wallet/precache-manifest.0934c7b91190e15b955ac0076da2ac76.js"
+  "/nem2-wallet/precache-manifest.ab4b9e6a149ae34ac0ce4df5d23e839d.js"
 );
 
 workbox.core.setCacheNameDetails({prefix: "nem2-wallet"});

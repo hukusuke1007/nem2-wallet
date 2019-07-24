@@ -37,7 +37,7 @@
               <v-btn
                 fab
                 small
-                flat
+                text
                 @click="onLoadBalance()"
                 :loading="isLoading"><v-icon>cached</v-icon></v-btn>
             </v-card-actions>
@@ -64,7 +64,7 @@
                 <h3>Send</h3>
               </v-card-title>
             </v-card-actions>
-            <div style="margin: 4px 26px;">
+            <v-form style="margin: 4px 26px;">
               <v-text-field
                 label="Address"
                 v-model="sendCoinInfo.address"
@@ -79,7 +79,7 @@
                 label="Message"
                 v-model="sendCoinInfo.message"
                 placeholder="Hello" />
-            </div>
+            </v-form>
             <v-flex>
               <v-btn
                 color="blue"
@@ -109,7 +109,7 @@
                 <v-btn
                   fab
                   small
-                  flat
+                  text
                   @click="onLoadTransactionHistory(true)"
                   :loading="isLoading"><v-icon>cached</v-icon></v-btn>
               </v-card-actions>
@@ -117,17 +117,15 @@
                 <v-data-table
                   :headers="headers"
                   :items="transactionHistory"
-                  :pagination.sync="pagination"
-                  hide-actions
+                  :options.sync="pagination"
+                  hide-default-footer
                   no-data-text="">
                   <template 
-                    slot="items"
-                    slot-scope="props">
+                    v-slot:item="props">
                     <tr @click="onClick(props.item)">
-                      <td>{{ props.item.amount }}</td>
-                      <td>{{ props.item.hash }}</td>
-                      <!-- <td>{{ props.item.message }}</td> -->
-                      <td>{{ props.item.date | dateFormat }}</td>
+                      <td width="20%">{{ props.item.amount }}</td>
+                      <td width="50%">{{ props.item.hash }}</td>
+                      <td width="30%">{{ props.item.date | dateFormat }}</td>
                     </tr>
                   </template>
                 </v-data-table> 
@@ -192,14 +190,13 @@ export default class HomePage extends Vue {
   headers: Array<{ text: string, value: string }> = [
     { text: 'amount', value: 'amount' },
     { text: 'txHash', value: 'hash' },
-    // { text: 'message', value: 'message' },
     { text: 'date', value: 'date' },
   ]
 
   pagination: any = {
-    sortBy: 'date',
+    // sortBy: 'date',
     descending: true,
-    rowsPerPage: -1,
+    itemsPerPage: -1,
   }
   transactionHistory: TransactionHistory[] = []
   transactionId?: string

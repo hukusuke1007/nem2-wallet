@@ -3,11 +3,17 @@ import App from './App.vue'
 import router from './router'
 import store from './store'
 import './registerServiceWorker'
-import Vuetify from 'vuetify'
 import 'vue2-toast/lib/toast.css'
 import Toast from 'vue2-toast'
 import VueQriously from 'vue-qriously'
 import { provide } from './provide'
+
+// Vuetify
+import Vuetify from 'vuetify'
+import 'vuetify/dist/vuetify.min.css'
+import colors from 'vuetify/lib/util/colors'
+
+const opts = {}
 
 Vue.use(Vuetify)
 
@@ -25,5 +31,6 @@ new Vue({
   provide,
   router,
   store,
+  vuetify: new Vuetify(),
   render: (h) => h(App),
 }).$mount('#app')

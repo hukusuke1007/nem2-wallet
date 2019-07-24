@@ -1,22 +1,15 @@
 <template>
   <div id="app">
     <header>
-      <span>{{ title }} </span>
+      <span>NEM2 wallet</span>
     </header>
-    <v-content class="main__content">
+    <div class="main__content">
       <v-fade-transition mode="out-in">
         <router-view/>
       </v-fade-transition>
-    </v-content>
+    </div>
   </div>
 </template>
-<script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator'
-
-export default class App extends Vue {
-  title = 'NEM2 wallet'
-}
-</script>
 <style lang="stylus">
 #app
   font-family 'Avenir', Helvetica, Arial, sans-serif
