@@ -36,7 +36,24 @@ Set the following catapult network in .env file.
 - FAUCET_URL
 - EXPLORER_URL
 
-Run commands.
+
+Set Firebase config.
+
+```sh
+mv src/config/FirebaseConfigSample.ts src/config/FirebaseConfig.ts 
+```
+
+Create firebase project and set api key in FirebaseConfig.<br>
+Check reference.
+
+[https://firebase.google.com/docs/storage/web/start](https://firebase.google.com/docs/storage/web/start)
+
+And enable anonymously authentication in Firebase.
+
+[https://firebase.google.com/docs/auth/web/anonymous-auth](https://firebase.google.com/docs/auth/web/anonymous-auth)
+
+
+After set firebase, Run commands.
 
 ```sh
 # Install libraries
