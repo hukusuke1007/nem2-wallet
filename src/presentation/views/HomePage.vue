@@ -61,6 +61,20 @@
           <v-card flat>
             <v-card-actions>
               <v-card-title>
+                <h3>Menu</h3>
+              </v-card-title>
+            </v-card-actions>
+            <ul class="menu__list">
+              <li>
+                <router-link to="./asset_exchange_page">
+                  Exchange Asset
+                </router-link>
+              </li>
+            </ul>
+          </v-card>          
+          <v-card flat>
+            <v-card-actions>
+              <v-card-title>
                 <h3>Send</h3>
               </v-card-title>
             </v-card-actions>
@@ -155,6 +169,8 @@ import { FetchLoadTransactionHistoryUseCase } from '@/domain/usecase/FetchLoadTr
 import { Wallet } from '@/domain/entity/Wallet'
 import { TransactionHistory } from '@/domain/entity/TransactionHistory'
 import { NemHelper } from '@/domain/helper/NemHelper'
+import * as firebase from 'firebase/app'
+import 'firebase/auth'
 
 @Component({
   name: 'HomePage',
@@ -194,7 +210,6 @@ export default class HomePage extends Vue {
   ]
 
   pagination: any = {
-    // sortBy: 'date',
     descending: true,
     itemsPerPage: -1,
   }
@@ -209,6 +224,7 @@ export default class HomePage extends Vue {
   mounted() {
     Vue.prototype.$toast('Hello NEM2 wallet')
     this.configure()
+    this.onLogin()
   }
 
   async configure() {
@@ -219,6 +235,17 @@ export default class HomePage extends Vue {
     } catch (error) {
       console.error(error)
     }
+  }
+
+  async onLogin() {
+    firebase.auth().onAuthStateChanged(async (response) => {
+      if (response == null) {
+        const user = await firebase.auth().signInAnonymously()
+        console.log('onLogin', 'new user', user)
+      } else {
+        console.log('onLogin', 'already exist user', response)
+      }
+    })
   }
 
   async onLoadBalance() {
@@ -315,5 +342,10 @@ export default class HomePage extends Vue {
     font-size 16px
     text-align right
     padding 8px
+
+.menu
+  &__list
+    margin 8px 30px
+    text-align left
 
 </style>

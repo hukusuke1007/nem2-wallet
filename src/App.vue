@@ -1,7 +1,9 @@
 <template>
   <div id="app">
     <header>
-      <span>NEM2 wallet</span>
+      <router-link style="text-decoration: none; color: white;" to="./">
+        <span>NEM2 wallet</span>   
+      </router-link>
     </header>
     <div class="main__content">
       <v-fade-transition mode="out-in">

@@ -78,13 +78,17 @@ export class TransactionDataSource implements TransactionRepository {
     try {
       return await this.wrapper.loadNamespace(name)
     } catch (error) {
-      throw error
+      if (this._errorNotFound(error)) {
+        return undefined
+      } else {
+        throw error
+      }
     }
   }
 
-  async createNamespace(name: string, privateKey: string) {
+  async createNamespace(name: string, privateKey: string, rentalBlock: number) {
     try {
-      return await this.wrapper.createNamespace(name, privateKey)
+      return await this.wrapper.createNamespace(name, privateKey, rentalBlock)
     } catch (error) {
       throw error
     }
@@ -106,19 +110,23 @@ export class TransactionDataSource implements TransactionRepository {
     }
   }
 
-  async registeNamespaceToAddress(name: string, addr: string, privateKey: string) {
+  async registNamespaceToAddress(name: string, addr: string, privateKey: string) {
     try {
-      return await this.wrapper.registeNamespaceToAddress(name, addr, privateKey)
+      return await this.wrapper.registNamespaceToAddress(name, addr, privateKey)
     } catch (error) {
       throw error
     }
   }
 
-  async registeMosaicToNamespace(name: string, mosaicId: string, privateKey: string) {
+  async registMosaicToNamespace(name: string, mosaicId: string, privateKey: string) {
     try {
-      return await this.wrapper.registeMosaicToNamespace(name, mosaicId, privateKey)
+      return await this.wrapper.registMosaicToNamespace(name, mosaicId, privateKey)
     } catch (error) {
       throw error
     }
+  }
+
+  private _errorNotFound(error: any) {
+    return 'statusCode' in error && error.statusCode === 404 ? true : false
   }
 }

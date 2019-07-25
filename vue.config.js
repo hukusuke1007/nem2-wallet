@@ -7,5 +7,5 @@ module.exports = {
   outputDir: 'docs',
   configureWebpack: {
     plugins: [new Dotenv()]
-  }
+  },
 }

@@ -12,6 +12,8 @@ import { Wallet } from '@/domain/entity/Wallet'
 import { TransactionHistory } from '@/domain/entity/TransactionHistory'
 import { TransactionResult } from '@/domain/entity/TransactionResult'
 import { TransactionError } from '@/domain/entity/TransactionError'
+import { NamespaceEntity } from '@/domain/entity/NamespaceEntity'
+import { MosaicEntity } from '@/domain/entity/MosaicEntity'
 
 export class CatapultWrapper implements NemBlockchainWrapper {
   endpoint: string
@@ -275,24 +277,33 @@ export class CatapultWrapper implements NemBlockchainWrapper {
         })
   }
 
-  async loadNamespace(name: string) {
+  async loadNamespace(name: string): Promise<NamespaceEntity> {
     return new Promise((resolve, reject) => {
       const namespace = new NamespaceId(name)
       this.namespaceHttp.getNamespace(namespace)
-        .subscribe(
-          (response) => {
-            console.log('loadNamespace', response)
-            resolve(response)
-          },
+        .pipe(
+          // map((item) => {
+          //   console.log('loadNamespace', item)
+          //   return item
+          // }),
+          filter((item) => item.levels.length > 0),
+          map((item) => new NamespaceEntity(name, item.levels[0].toHex(), item.owner.address.plain(), item.owner.publicKey)),
+        ).subscribe(
+          (response) => resolve(response),
           (error) => reject(error))
     })
   }
 
-  async loadNamespacesFromAccount(addr: string) {
+  async loadNamespacesFromAccount(addr: string): Promise<NamespaceEntity[]> {
     return new Promise((resolve, reject) => {
       const address = Address.createFromRawAddress(addr)
       this.namespaceHttp.getNamespacesFromAccount(address)
-        .subscribe(
+        .pipe(
+          map((items) => items
+            .filter((item) => item.levels.length > 0)
+            .map((item) => new NamespaceEntity(name, item.levels[0].toHex(), item.owner.address.plain(), item.owner.publicKey)),
+          ),
+        ).subscribe(
           (response) => {
             console.log('loadNamespacesFromAccount', response)
             resolve(response)
@@ -301,9 +312,8 @@ export class CatapultWrapper implements NemBlockchainWrapper {
     })
   }
 
-  async createNamespace(name: string, privateKey: string): Promise<TransactionResult> {
+  async createNamespace(name: string, privateKey: string, rentalBlock: number): Promise<TransactionResult> {
     return new Promise((resolve, reject) => {
-      const rentalBlock = 1000 // 20 * 86400 / 15 // duration ≈ numberOfDays * 86400 / blockGenerationTargetTime
       const registerNamespaceTransaction = RegisterNamespaceTransaction.createRootNamespace(
         Deadline.create(),
         name,
@@ -343,7 +353,7 @@ export class CatapultWrapper implements NemBlockchainWrapper {
     })
   }
 
-  async createMosaic(privateKey: string, maxAmount: number, supplyMutable: boolean, transferable: boolean, divisibility: number, durationCount?: number): Promise<TransactionResult> {
+  async createMosaic(privateKey: string, maxAmount: number, supplyMutable: boolean, transferable: boolean, divisibility: number, durationCount?: number): Promise<MosaicEntity> {
     return new Promise((resolve, reject) => {
       const account = Account.createFromPrivateKey(privateKey, this.network)
       const nonce = MosaicNonce.createRandom()
@@ -374,8 +384,12 @@ export class CatapultWrapper implements NemBlockchainWrapper {
       const signedTransaction = account.sign(aggregateTransaction, this.networkGenerationHash)
       // status
       this._loadStatus(account.address.plain(), signedTransaction.hash)
-        .then((response) => resolve(response))
-        .catch((error) => reject(error))
+        .then((response) => resolve(new MosaicEntity(
+          mosaicDefinitionTransaction.mosaicId.toHex(),
+          account.address.plain(),
+          account.publicAccount.publicKey,
+          response.hash),
+        )).catch((error) => reject(error))
       this.transactionHttp.announce(signedTransaction)
           .subscribe(
             (response) => console.log('createMosaic', response, mosaicDefinitionTransaction.mosaicId),
@@ -383,7 +397,7 @@ export class CatapultWrapper implements NemBlockchainWrapper {
     })
   }
 
-  async registeNamespaceToAddress(name: string, addr: string, privateKey: string): Promise<TransactionResult> {
+  async registNamespaceToAddress(name: string, addr: string, privateKey: string): Promise<TransactionResult> {
     return new Promise((resolve, reject) => {
       const namespaceId = new NamespaceId(name)
       const address = Address.createFromRawAddress(addr)
@@ -406,7 +420,7 @@ export class CatapultWrapper implements NemBlockchainWrapper {
     })
   }
 
-  async registeMosaicToNamespace(name: string, mosaicName: string, privateKey: string): Promise<TransactionResult> {
+  async registMosaicToNamespace(name: string, mosaicName: string, privateKey: string): Promise<TransactionResult> {
     return new Promise((resolve, reject) => {
       const namespaceId = new NamespaceId(name)
       const mosaicId = new MosaicId(mosaicName)

@@ -2,10 +2,12 @@ import { TransactionRepository } from '@/domain/repository/TransactionRepository
 import { WalletRepository } from '@/domain/repository/WalletRepository'
 import { AssetCreation } from '@/domain/entity/AssetCreation'
 import { AggregateEscrow } from '@/domain/entity/AggregateEscrow'
+import { Asset } from '@/domain/entity/firebase/Asset'
+import { Collection } from '@1amageek/ballcap'
 
 export interface FetchAssetExchangeUseCase {
-  createAsset(asset: AssetCreation): Promise<any>
-  loadPublishAssetList(): Promise<any>
+  createAsset(asset: AssetCreation): Promise<string>
+  loadAssetList(): Promise<Asset[]>
   exchangeAsset(): Promise<any>
 }
 
@@ -25,18 +27,62 @@ export class FetchAssetExchangeUseCaseImpl implements FetchAssetExchangeUseCase 
       const wallet = await this.walletRepository.loadWallet()
       if (wallet === undefined) { throw new Error('wallet is nothing..') }
       const privateKey = wallet!.privateKey!
-      const publicKey = wallet!.publicKey!
       const address = wallet!.address!
+      const namespace = asset.namespace
+      const exchangeAmount = asset.exchangeAmount
 
       const account = await this.walletRepository.loadAccount(address)
-      console.log('account', account)
+      console.log('account', account.mosaics)
 
-      // const status = await this.transactionRepository.loadNamespace(asset.namespace)
-      // console.log('status', status)
-
-      const createNamespace = await this.transactionRepository.createNamespace(asset.namespace, privateKey)
+      const status = await this.transactionRepository.loadNamespace(namespace)
+      console.log('status', status)
+      if (status !== undefined) {
+        return 'Already exist namespace.'
+      }
+      const createNamespace = await this.transactionRepository.createNamespace(namespace, privateKey, 100)
       console.log('createNamespace', createNamespace)
 
+      const mosaic = await this.transactionRepository.createMosaic(privateKey, asset)
+      console.log('createMosaic', mosaic)
+
+      // const registeNamespaceToAddress = await this.transactionRepository.registNamespaceToAddress(namespace, address, privateKey)
+      // console.log('registeNamespaceToAddress', registeNamespaceToAddress)
+
+      // const registeMosaicToNamespace = await this.transactionRepository.registMosaicToNamespace(namespace, mosaic.mosaicId, privateKey)
+      // console.log('registeMosaicToNamespace', registeMosaicToNamespace)
+
+      const item = new Asset()
+      item.uid = item.id
+      item.namespace = namespace
+      item.createAddress = address
+      item.mosaicId = mosaic.mosaicId
+      item.exchangeAmount = exchangeAmount
+      await item.save()
+      console.log('batch')
+    } catch (error) {
+      throw error
+    }
+    return 'SUCCESS'
+  }
+
+  async loadAssetList() {
+    let results: Asset[] = []
+    try {
+      const dataSource = await Asset.collectionReference().get()
+      const aaaa = dataSource.docs.map((item) => {
+        if (item.exists) {
+          return Asset.from<Asset>(item.data)
+        }
+      })
+      console.log('loadAssetList', dataSource)
+    } catch (error) {
+      throw error
+    }
+    return results
+  }
+
+  async exchangeAsset() {
+    try {
       // アグリゲートトランザクションの確認
       // const aggregateEscrowAsset = await this.transactionRepository.requestAggregateEscrowAsset(aggregateEscrow)
       // console.log('aggregateEscrowAsset', aggregateEscrowAsset)
@@ -48,42 +94,6 @@ export class FetchAssetExchangeUseCaseImpl implements FetchAssetExchangeUseCase 
 
       // const loadNamespacesFromAccount = await this.walletRepository.loadNamespacesFromAccount(address)
       // console.log('loadNamespacesFromAccount', loadNamespacesFromAccount)
-
-      // create
-      // const createNamespace = await this.transactionRepository.createNamespace(asset.namespace, privateKey)
-      // console.log('createNamespace', createNamespace)
-
-      // const createSubNamesoace = await this.transactionRepository.createSubNamespace('coin', asset.namespace, privateKey)
-      // console.log('createSubNamesoace', createSubNamesoace)
-
-      // register
-      const registeNamespaceToAddress = await this.transactionRepository.registeNamespaceToAddress(asset.namespace, address, privateKey)
-      console.log('registeNamespaceToAddress', registeNamespaceToAddress)
-
-      // const mosaicId = await this.transactionRepository.createMosaic(privateKey, asset)
-      // console.log('createMosaic', mosaicId)
-
-      // const registeMosaicToNamespace = await this.transactionRepository.registeMosaicToNamespace(asset.namespace, mosaicId, privateKey)
-      // console.log('registeMosaicToNamespace', registeMosaicToNamespace)
-
-      const history = await this.transactionRepository.transactionHistoryAll(wallet!.publicKey!, 100)
-
-      // const loadNamespace = await this.transactionRepository.loadNamespace(asset.namespace)
-      // console.log('createNamespace', loadNamespace)
-    } catch (error) {
-      throw error
-    }
-  }
-
-  async loadPublishAssetList() {
-    try {
-    } catch (error) {
-      throw error
-    }
-  }
-
-  async exchangeAsset() {
-    try {
     } catch (error) {
       throw error
     }

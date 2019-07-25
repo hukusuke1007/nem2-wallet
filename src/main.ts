@@ -13,6 +13,16 @@ import Vuetify from 'vuetify'
 import 'vuetify/dist/vuetify.min.css'
 import colors from 'vuetify/lib/util/colors'
 
+
+// Firebase
+import * as firebase from 'firebase/app'
+import * as Ballcap from '@1amageek/ballcap'
+import '@firebase/firestore'
+import { firebaseConfig } from '@/config/FirebaseConfig'
+
+const app = firebase.initializeApp(firebaseConfig)
+Ballcap.initialize(app.firestore(), app.firestore().collection('version').doc('1'))
+
 const opts = {}
 
 Vue.use(Vuetify)

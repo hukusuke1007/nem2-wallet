@@ -8,9 +8,11 @@
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
+    "@1amageek/ballcap": "^0.4.1",
     "date-fns": "^1.30.1",
     "dotenv-webpack": "^1.7.0",
     "encoding-japanese": "^1.0.29",
+    "firebase": "^6.3.1",
     "localforage": "^1.7.3",
     "nem2-sdk": "^0.13.0",
     "register-service-worker": "^1.6.2",
