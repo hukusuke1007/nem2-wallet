@@ -29,9 +29,10 @@
               no-data-text="">
               <template 
                 v-slot:item="props">
-                <tr @click="onClickAssetList(props.item)">
-                  <td width="70%">{{ props.item.namespace }}</td>
-                  <td width="30%">{{ props.item.createdAt | dateFormat }}</td>
+                <tr class="asset--list__value" @click="onClickAssetList(props.item)">
+                  <td width="40%">{{ props.item.namespace }}</td>
+                  <td width="30%">{{ props.item.exchangeAmount }}</td>
+                  <td width="40%">{{ props.item.createdAt.toDate() | dateFormat }}</td>
                 </tr>
               </template>
             </v-data-table> 
@@ -122,7 +123,7 @@
 import { Component, Vue, Inject, Watch, Prop } from 'vue-property-decorator'
 import { mapState } from 'vuex'
 import { format } from 'date-fns'
-import { FetchAssetExchangeUseCase } from '@/domain/usecase/FetchAssetExchangeUseCase'
+import { AssetExchangeUseCase } from '@/domain/usecase/AssetExchangeUseCase'
 import { TransactionHistory } from '@/domain/entity/TransactionHistory'
 import { AssetCreation } from '@/domain/entity/AssetCreation'
 import { Asset } from '@/domain/entity/firebase/Asset'
@@ -138,13 +139,14 @@ import { NemHelper } from '@/domain/helper/NemHelper'
 	},
 })
 export default class AssetExchangePage extends Vue {
-  @Inject('FetchAssetExchangeUseCase') fetchAssetExchangeUseCase!: FetchAssetExchangeUseCase
+  @Inject('AssetExchangeUseCase') assetExchangeUseCase!: AssetExchangeUseCase
 
   // Exchange
   assetList: Asset[] = []
-  headers: Array<{ text: string, value: string }> = [
-    { text: 'namespace', value: 'namespace' },
-    { text: 'createdAt', value: 'createdAt' },
+  headers: Array<{ text: string, value: string, align: string }> = [
+    { text: 'namespace', value: 'namespace', align: 'center' },
+    { text: 'exchange NEM', value: 'exchangeAmount', align: 'center' },
+    { text: 'createdAt', value: 'createdAt', align: 'center' },
   ]
 
   pagination: any = {
@@ -160,7 +162,7 @@ export default class AssetExchangePage extends Vue {
   }
 
   async configure() {
-    await this.fetchAssetExchangeUseCase.loadAssetList()
+    await this.onLoadAssetList()
   }
 
   onClickAssetList() {
@@ -173,12 +175,9 @@ export default class AssetExchangePage extends Vue {
       const assetName = this.assetForm.name
       const maxAmount = Number(this.assetForm.maxAmount)
       const exchangeAmount = Number(this.assetForm.exchangeNemAmount)
-      const supplyMutable = true
-      const transferable = true
-      const divisibility = 0
-      const asset = new AssetCreation(assetName, maxAmount, exchangeAmount, supplyMutable, transferable, divisibility)
+      const asset = new AssetCreation(assetName, maxAmount, exchangeAmount, true, true, 0)
       console.log('onCreateAsset', asset)
-      // message = await this.fetchAssetExchangeUseCase.createAsset(asset)
+      message = await this.assetExchangeUseCase.createAsset(asset)
       this.clearForm()
     } catch (error) {
       console.error('onCreateAsset', error)
@@ -190,6 +189,7 @@ export default class AssetExchangePage extends Vue {
   async onLoadAssetList() {
     this.$store.commit('startLoading')
     try {
+      this.assetList = await this.assetExchangeUseCase.loadAssetList()
     } catch (error) {
       console.error('onLoadAssetList', error)
     }
@@ -221,4 +221,10 @@ export default class AssetExchangePage extends Vue {
     text-align right
     padding 8px
 
+.asset--list
+  &__value
+    text-align left
+
+.v-data-table th
+  text-align center
 </style>

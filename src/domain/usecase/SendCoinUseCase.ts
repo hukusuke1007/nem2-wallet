@@ -2,11 +2,11 @@ import { TransactionRepository } from '@/domain/repository/TransactionRepository
 import { WalletRepository } from '@/domain/repository/WalletRepository'
 import { TransactionResult } from '@/domain/entity/TransactionResult'
 
-export interface FetchSendCoinUseCase {
+export interface SendCoinUseCase {
   execute(address: string, amount: number, message: string): Promise<TransactionResult>
 }
 
-export class FetchSendCoinUseCaseImpl implements FetchSendCoinUseCase {
+export class SendCoinUseCaseImpl implements SendCoinUseCase {
   private transactionRepository: TransactionRepository
   private walletRepository: WalletRepository
 

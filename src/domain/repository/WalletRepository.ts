@@ -5,5 +5,4 @@ export interface WalletRepository {
   loadWallet(): Promise<Wallet | undefined>
   loadAccount(addr: string): Promise<any>
   loadBalance(addr: string): Promise<number>
-  loadNamespacesFromAccount(addr: string): Promise<any>
 }

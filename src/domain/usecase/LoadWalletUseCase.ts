@@ -1,11 +1,11 @@
 import { WalletRepository } from '@/domain/repository/WalletRepository'
 import { Wallet } from '@/domain/entity/Wallet'
 
-export interface FetchLoadWalletUseCase {
+export interface LoadWalletUseCase {
   execute(): Promise<Wallet>
 }
 
-export class FetchLoadWalletUseCaseImpl implements FetchLoadWalletUseCase {
+export class LoadWalletUseCaseImpl implements LoadWalletUseCase {
 
   private repository: WalletRepository
 

@@ -1,10 +1,10 @@
 import { WalletRepository } from '@/domain/repository/WalletRepository'
 
-export interface FetchLoadBalanceUseCase {
+export interface LoadBalanceUseCase {
   execute(addr: string): Promise<number>
 }
 
-export class FetchLoadBalanceUseCaseImpl implements FetchLoadBalanceUseCase {
+export class LoadBalanceUseCaseImpl implements LoadBalanceUseCase {
   private repository: WalletRepository
   constructor(repository: WalletRepository) {
     this.repository = repository

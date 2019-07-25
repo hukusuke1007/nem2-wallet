@@ -1,7 +1,7 @@
 <template>
   <div id="app">
     <header>
-      <router-link style="text-decoration: none; color: white;" to="./">
+      <router-link style="text-decoration: none; color: white;" to="/">
         <span>NEM2 wallet</span>   
       </router-link>
     </header>

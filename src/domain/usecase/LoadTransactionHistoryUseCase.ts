@@ -2,12 +2,12 @@ import { TransactionRepository } from '@/domain/repository/TransactionRepository
 import { WalletRepository } from '@/domain/repository/WalletRepository'
 import { TransactionHistory } from '@/domain/entity/TransactionHistory'
 
-export interface FetchLoadTransactionHistoryUseCase {
+export interface LoadTransactionHistoryUseCase {
   executeTransferHistory(id: string): Promise<TransactionHistory>
   executeTransferHistoryAll(limit: number, id?: string): Promise<TransactionHistory[]>
 }
 
-export class FetchLoadTransactionHistoryUseCaseImpl implements FetchLoadTransactionHistoryUseCase {
+export class LoadTransactionHistoryUseCaseImpl implements LoadTransactionHistoryUseCase {
   private transactionRepository: TransactionRepository
   private walletRepository: WalletRepository
 

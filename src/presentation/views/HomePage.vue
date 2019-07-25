@@ -162,10 +162,10 @@
 import { Component, Vue, Inject, Watch } from 'vue-property-decorator'
 import { mapState } from 'vuex'
 import { format } from 'date-fns'
-import { FetchLoadBalanceUseCase } from '@/domain/usecase/FetchLoadBalanceUseCase'
-import { FetchLoadWalletUseCase } from '@/domain/usecase/FetchLoadWalletUseCase'
-import { FetchSendCoinUseCase } from '@/domain/usecase/FetchSendCoinUseCase'
-import { FetchLoadTransactionHistoryUseCase } from '@/domain/usecase/FetchLoadTransactionHistoryUseCase'
+import { LoadBalanceUseCase } from '@/domain/usecase/LoadBalanceUseCase'
+import { LoadWalletUseCase } from '@/domain/usecase/LoadWalletUseCase'
+import { SendCoinUseCase } from '@/domain/usecase/SendCoinUseCase'
+import { LoadTransactionHistoryUseCase } from '@/domain/usecase/LoadTransactionHistoryUseCase'
 import { Wallet } from '@/domain/entity/Wallet'
 import { TransactionHistory } from '@/domain/entity/TransactionHistory'
 import { NemHelper } from '@/domain/helper/NemHelper'
@@ -182,10 +182,10 @@ import 'firebase/auth'
 	},
 })
 export default class HomePage extends Vue {
-  @Inject('FetchLoadBalanceUseCase') fetchLoadBalanceUseCase!: FetchLoadBalanceUseCase
-  @Inject('FetchLoadWalletUseCase') fetchLoadWalletUseCase!: FetchLoadWalletUseCase
-  @Inject('FetchSendCoinUseCase') fetchSendCoinUseCase!: FetchSendCoinUseCase
-  @Inject('FetchLoadTransactionHistoryUseCase') fetchLoadTransactionHistoryUseCase!: FetchLoadTransactionHistoryUseCase
+  @Inject('LoadBalanceUseCase') loadBalanceUseCase!: LoadBalanceUseCase
+  @Inject('LoadWalletUseCase') loadWalletUseCase!: LoadWalletUseCase
+  @Inject('SendCoinUseCase') sendCoinUseCase!: SendCoinUseCase
+  @Inject('LoadTransactionHistoryUseCase') loadTransactionHistoryUseCase!: LoadTransactionHistoryUseCase
 
   balance: number = 0
   sendCoinInfo: { address: string, amount: number, message: string } = { address: '', amount: 0, message: '' }
@@ -229,7 +229,7 @@ export default class HomePage extends Vue {
 
   async configure() {
     try {
-      this.wallet = await this.fetchLoadWalletUseCase.execute()
+      this.wallet = await this.loadWalletUseCase.execute()
       await this.onLoadBalance()
       await this.onLoadTransactionHistory()
     } catch (error) {
@@ -252,7 +252,7 @@ export default class HomePage extends Vue {
     this.$store.commit('startLoading')
     try {
       if (this.wallet === null) { return }
-      this.balance = await this.fetchLoadBalanceUseCase.execute(this.wallet!.address!)
+      this.balance = await this.loadBalanceUseCase.execute(this.wallet!.address!)
       console.log('balance', this.balance)
     } catch (error) {
       console.error('balance', error)
@@ -267,8 +267,8 @@ export default class HomePage extends Vue {
       if (this.validation().length !== 0) {
         throw new Error('Cloud not send coin.')
        }
-      const wallet = await this.fetchLoadWalletUseCase.execute()
-      const result = await this.fetchSendCoinUseCase.execute(this.sendCoinInfo.address, Number(this.sendCoinInfo.amount), this.sendCoinInfo.message)
+      const wallet = await this.loadWalletUseCase.execute()
+      const result = await this.sendCoinUseCase.execute(this.sendCoinInfo.address, Number(this.sendCoinInfo.amount), this.sendCoinInfo.message)
       console.log('sendCoin', result)
       this.resultMessage = `SUCCESS: ${result.hash}`
     } catch (error) {
@@ -291,7 +291,7 @@ export default class HomePage extends Vue {
         this.transactionHistory = []
         this.transactionId = undefined
       }
-      const history = await this.fetchLoadTransactionHistoryUseCase.executeTransferHistoryAll(20, this.transactionId)
+      const history = await this.loadTransactionHistoryUseCase.executeTransferHistoryAll(20, this.transactionId)
       console.log('history', history)
       if (history.length !== 0) {
         this.transactionId = history[history.length - 1].id
@@ -347,5 +347,8 @@ export default class HomePage extends Vue {
   &__list
     margin 8px 30px
     text-align left
+
+.v-data-table th
+  text-align center
 
 </style>

@@ -48,7 +48,7 @@
 import { Component, Vue, Inject, Watch, Prop } from 'vue-property-decorator'
 import { mapState } from 'vuex'
 import { format } from 'date-fns'
-import { FetchLoadTransactionHistoryUseCase } from '@/domain/usecase/FetchLoadTransactionHistoryUseCase'
+import { LoadTransactionHistoryUseCase } from '@/domain/usecase/LoadTransactionHistoryUseCase'
 import { TransactionHistory } from '@/domain/entity/TransactionHistory'
 import { NemHelper } from '@/domain/helper/NemHelper'
 
@@ -62,7 +62,7 @@ import { NemHelper } from '@/domain/helper/NemHelper'
 	},
 })
 export default class TransactionPage extends Vue {
-  @Inject('FetchLoadTransactionHistoryUseCase') fetchLoadTransactionHistoryUseCase!: FetchLoadTransactionHistoryUseCase
+  @Inject('LoadTransactionHistoryUseCase') loadTransactionHistoryUseCase!: LoadTransactionHistoryUseCase
 
   @Prop() transactionId?: string
   transactionHistory: TransactionHistory | null = null
@@ -80,7 +80,7 @@ export default class TransactionPage extends Vue {
     this.$store.commit('startLoading')
     if (this.transactionId === undefined) { return }
     try {
-      this.transactionHistory = await this.fetchLoadTransactionHistoryUseCase.executeTransferHistory(this.transactionId!)
+      this.transactionHistory = await this.loadTransactionHistoryUseCase.executeTransferHistory(this.transactionId!)
       console.log(this.transactionHistory)
     } catch (error) {
       console.error(error)
