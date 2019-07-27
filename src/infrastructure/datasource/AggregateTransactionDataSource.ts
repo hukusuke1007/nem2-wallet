@@ -19,10 +19,10 @@ export class AggregateTransactionDataSource implements AggregateTransactionRepos
     this.nemNode = nemNode
     this.accountHttp = new AccountHttp(nemNode.endpoint)
     this.transactionHttp = new TransactionHttp(nemNode.endpoint)
-    this.listenerWrapper = new ListenerWrapper(nemNode.wsEndpoint, nemNode.port)
+    this.listenerWrapper = new ListenerWrapper(nemNode.wsEndpoint)
   }
 
-  async requestComplete(privateKey: string, aggregateTransactions: any[]): Promise<any> {
+  async requestComplete(privateKey: string, aggregateTransactions: any[]): Promise<TransactionResult> {
     return new Promise((resolve, reject) => {
       const account = Account.createFromPrivateKey(privateKey, this.nemNode.network)
       const aggregateTransaction = AggregateTransaction.createComplete(

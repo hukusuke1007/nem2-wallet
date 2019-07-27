@@ -45,17 +45,17 @@
           <v-form style="margin: 0 26px;">
             <v-text-field
               label="Asset name"
-              v-model="assetForm.name"
+              v-model="exchangeAssetForm.name"
               placeholder="Asset1"
               required />
             <v-text-field
               label="Asset amount"
-              v-model="assetForm.maxAmount"
+              v-model="exchangeAssetForm.amount"
               type="number"
               required />
             <v-text-field
               label="Exchange NEM amount"
-              v-model="assetForm.maxAmount"
+              v-model="exchangeAssetForm.exchangeNemAmount"
               type="number"
               required />
           </v-form>
@@ -154,6 +154,9 @@ export default class AssetExchangePage extends Vue {
     itemsPerPage: -1,
   }
 
+  // Exchange asset
+  exchangeAssetForm: { name: string, amount: number, exchangeNemAmount: number } = { name: '', amount: 0, exchangeNemAmount: 0 }
+
   // Create asset
   assetForm: { name: string, maxAmount: number, exchangeNemAmount: number } = { name: '', maxAmount: 0, exchangeNemAmount: 0 }
 
@@ -170,6 +173,7 @@ export default class AssetExchangePage extends Vue {
   }
 
   async onCreateAsset() {
+    this.$store.commit('startLoading')
     let message: string = ''
     try {
       const assetName = this.assetForm.name
@@ -184,6 +188,7 @@ export default class AssetExchangePage extends Vue {
       message = error.message
     }
     Vue.prototype.$toast(message)
+    this.$store.commit('stopLoading')
   }
 
   async onLoadAssetList() {

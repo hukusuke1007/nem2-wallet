@@ -7,8 +7,8 @@ export class ListenerWrapper {
   endpoint: string
   listener: Listener
 
-  constructor(url: string, port: string) {
-    this.endpoint = `${url}:${port}`
+  constructor(endpoint: string) {
+    this.endpoint = endpoint
     this.listener = new Listener(this.endpoint, WebSocket)
   }
 
@@ -36,10 +36,18 @@ export class ListenerWrapper {
           .pipe(
             filter((item) => (item.transactionInfo !== undefined && item.transactionInfo.hash === hash)),
             map((item) => new TransactionResult('SUCCESS', item.transactionInfo!.hash!)),
-          ).subscribe((response) => {
-            console.log('loadStatus unconfirmedAdded' , response)
-            resolve(response)
-        })
+          ).subscribe(
+            (response) => {
+              console.log('loadStatus unconfirmedAdded' , response)
+              resolve(response)
+            },
+            (error) => console.error('loadStatus unconfirmedAdded', error),
+          )
+        this.listener.confirmed(address)
+          .subscribe(
+            (response) => console.log('loadStatus confirmed', response),
+            (error) => console.error('loadStatus confirmed', error),
+          )
       })
     })
   }

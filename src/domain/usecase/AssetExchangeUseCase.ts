@@ -48,7 +48,7 @@ export class AssetExchangeUseCaseImpl implements AssetExchangeUseCase {
       if (status !== undefined) {
         return 'Already exist namespace.'
       }
-      const namespaceTxAggregate = await this.namespaceRepository.createNamespaceTxAggregate(namespace, privateKey, 100)
+      const namespaceTxAggregate = await this.namespaceRepository.createNamespaceTxAggregate(privateKey, namespace, 100)
       console.log('namespaceTxAggregate', namespaceTxAggregate)
 
       const mosaicAggregate = await this.mosaicRepository.createMosaicDefinitionTxAggregate(privateKey, asset)

@@ -41,7 +41,15 @@
                 @click="onLoadBalance()"
                 :loading="isLoading"><v-icon>cached</v-icon></v-btn>
             </v-card-actions>
-            <v-card-text>{{ balance }} xem</v-card-text>
+            <!-- <v-card-text>{{ balance }} xem</v-card-text> -->
+            <table border="1" class="table__list">
+              <td width="50%" class="table__key">currency</td>
+              <td width="50%" class="table__value">amount</td>
+              <tr v-for="(item, index) in assets" :key="index">
+                <td width="50%" class="table__key">{{ item.mosaicId }}</td>
+                <td width="50%" class="table__value">{{ item.amount }}</td>
+              </tr>
+            </table>
             <v-card-actions>
               <v-card-title>
                 <h3>Address</h3>
@@ -167,6 +175,7 @@ import { LoadWalletUseCase } from '@/domain/usecase/LoadWalletUseCase'
 import { SendCoinUseCase } from '@/domain/usecase/SendCoinUseCase'
 import { LoadTransactionHistoryUseCase } from '@/domain/usecase/LoadTransactionHistoryUseCase'
 import { Wallet } from '@/domain/entity/Wallet'
+import { AssetMosaic } from '@/domain/entity/AssetMosaic'
 import { TransactionHistory } from '@/domain/entity/TransactionHistory'
 import { NemHelper } from '@/domain/helper/NemHelper'
 import * as firebase from 'firebase/app'
@@ -188,6 +197,7 @@ export default class HomePage extends Vue {
   @Inject('LoadTransactionHistoryUseCase') loadTransactionHistoryUseCase!: LoadTransactionHistoryUseCase
 
   balance: number = 0
+  assets: AssetMosaic[] = []
   sendCoinInfo: { address: string, amount: number, message: string } = { address: '', amount: 0, message: '' }
   wallet: Wallet | null = null
   qrJson: string = ''
@@ -252,8 +262,8 @@ export default class HomePage extends Vue {
     this.$store.commit('startLoading')
     try {
       if (this.wallet === null) { return }
-      this.balance = await this.loadBalanceUseCase.execute(this.wallet!.address!)
-      console.log('balance', this.balance)
+      this.assets = await this.loadBalanceUseCase.execute(this.wallet!.address!)
+      console.log('balance', this.assets)
     } catch (error) {
       console.error('balance', error)
     }

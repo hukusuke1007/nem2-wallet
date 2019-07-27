@@ -26,7 +26,7 @@ export class MosaicDataSource implements MosaicRepository {
     // this.accountHttp = new AccountHttp(nemNode.endpoint)
     // this.mosaicHttp = new MosaicHttp(nemNode.endpoint)
     this.transactionHttp = new TransactionHttp(nemNode.endpoint)
-    this.listenerWrapper = new ListenerWrapper(nemNode.wsEndpoint, nemNode.port)
+    this.listenerWrapper = new ListenerWrapper(nemNode.wsEndpoint)
   }
 
   async createMosaic(privateKey: string, asset: AssetCreation): Promise<MosaicEntity> {

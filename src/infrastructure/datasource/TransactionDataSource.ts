@@ -21,7 +21,7 @@ export class TransactionDataSource implements TransactionRepository {
     this.accountHttp = new AccountHttp(nemNode.endpoint)
     this.transactionHttp = new TransactionHttp(nemNode.endpoint)
     this.blockHttp = new BlockHttp(nemNode.endpoint)
-    this.listenerWrapper = new ListenerWrapper(nemNode.wsEndpoint, nemNode.port)
+    this.listenerWrapper = new ListenerWrapper(nemNode.wsEndpoint)
   }
 
   async sendAsset(privateKey: string, toAddress: string, amount: number, message?: string): Promise<TransactionResult> {
@@ -106,6 +106,7 @@ export class TransactionDataSource implements TransactionRepository {
       this.accountHttp.transactions(publicAccount, query)
         .pipe(
           map((item) => {
+            console.log(item)
             if (item.length === 0) {
               resolve([])
             }

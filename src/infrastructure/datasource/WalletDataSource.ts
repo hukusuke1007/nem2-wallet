@@ -1,8 +1,9 @@
-import { AccountHttp, MosaicHttp, MosaicService, Account, Address } from 'nem2-sdk'
+import { AccountHttp, MosaicHttp, MosaicService, Account, Address, MosaicId } from 'nem2-sdk'
 import localForage from 'localforage'
-import { mergeMap } from 'rxjs/operators'
+import { mergeMap, map, combineAll } from 'rxjs/operators'
 import { WalletRepository } from '@/domain/repository/WalletRepository'
 import { Wallet } from '@/domain/entity/Wallet'
+import { AssetMosaic } from '@/domain/entity/AssetMosaic'
 import { NemNode } from '@/domain/configure/NemNode'
 
 export class WalletDataSource implements WalletRepository {
@@ -62,16 +63,15 @@ export class WalletDataSource implements WalletRepository {
     })
   }
 
-  async loadBalance(addr: string): Promise<number> {
+  async loadBalance(addr: string): Promise<AssetMosaic[]> {
     return new Promise((resolve, reject) => {
       const address = Address.createFromRawAddress(addr)
       this.mosaicService.mosaicsAmountViewFromAddress(address)
         .pipe(
-          mergeMap((_) => _ ),
+          combineAll(),
+          map((items) => items.map((item) => new AssetMosaic(item.fullName(), item.relativeAmount(), item))),
         ).subscribe(
-          (mosaic) => {
-            console.log('mosaicsAmountViewFromAddress', mosaic)
-            resolve(mosaic.relativeAmount()) },
+          (items) => resolve(items),
           (error) => reject(error))
     })
   }

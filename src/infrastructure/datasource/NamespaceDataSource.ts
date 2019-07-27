@@ -1,7 +1,8 @@
 import { TransactionHttp, Account, Address,
   Deadline, NamespaceHttp, NamespaceId, RegisterNamespaceTransaction, UInt64,
   AliasTransaction, AliasActionType,
-  MosaicId } from 'nem2-sdk'
+  MosaicId, 
+  NamespaceName} from 'nem2-sdk'
 import { map, filter } from 'rxjs/operators'
 import { NamespaceRepository } from '@/domain/repository/NamespaceRepository'
 import { NamespaceEntity } from '@/domain/entity/NamespaceEntity'
@@ -19,7 +20,7 @@ export class NamespaceDataSource implements NamespaceRepository {
     this.nemNode = nemNode
     this.transactionHttp = new TransactionHttp(nemNode.endpoint)
     this.namespaceHttp = new NamespaceHttp(nemNode.endpoint)
-    this.listenerWrapper = new ListenerWrapper(nemNode.wsEndpoint, nemNode.port)
+    this.listenerWrapper = new ListenerWrapper(nemNode.wsEndpoint)
   }
 
   async loadNamespace(name: string): Promise<NamespaceEntity> {
@@ -27,6 +28,11 @@ export class NamespaceDataSource implements NamespaceRepository {
       const namespace = new NamespaceId(name)
       this.namespaceHttp.getNamespace(namespace)
         .pipe(
+          // map((item) => {
+          //   const a = new NamespaceId(item.levels[0].toHex())
+          //   console.log('item',  item, item.levels[0].fullName)
+          //   return item
+          // }),
           filter((item) => item.levels.length > 0),
           map((item) => new NamespaceEntity(name, item.levels[0].toHex(), item.owner.address.plain(), item.owner.publicKey)),
         ).subscribe(
@@ -136,6 +142,7 @@ export class NamespaceDataSource implements NamespaceRepository {
   }
 
   createNamespaceTxAggregate(privateKey: string, name: string, rentalBlock: number): any {
+    console.log(privateKey, name)
     const account = Account.createFromPrivateKey(privateKey, this.nemNode.network)
     return this._createNamespaceTx(name, rentalBlock).toAggregate(account.publicAccount)
   }

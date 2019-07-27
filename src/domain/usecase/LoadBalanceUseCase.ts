@@ -1,7 +1,8 @@
 import { WalletRepository } from '@/domain/repository/WalletRepository'
+import { AssetMosaic } from '@/domain/entity/AssetMosaic'
 
 export interface LoadBalanceUseCase {
-  execute(addr: string): Promise<number>
+  execute(addr: string): Promise<AssetMosaic[]>
 }
 
 export class LoadBalanceUseCaseImpl implements LoadBalanceUseCase {
