@@ -66,23 +66,8 @@ export class WalletDataSource implements WalletRepository {
 
   async loadBalance(addr: string): Promise<AssetMosaic[]> {
     return new Promise((resolve, reject) => {
+      this.loadBalanceAndNamespace(addr)
       const address = Address.createFromRawAddress(addr)
-      // this.mosaicService.mosaicsAmountViewFromAddress(address)
-      //   .pipe(
-      //     combineAll(),
-      //     map((items) => {
-      //       console.log(items)
-      //       const mosaicIds = items.map((item) => {
-      //         console.log('mosaicId', item.mosaicInfo.mosaicId)
-      //         return item.mosaicInfo.mosaicId
-      //       })
-      //       console.log('mosaicIds', mosaicIds)
-      //       return this.mosaicHttp.getMosaicsNames(mosaicIds)
-      //     }),
-      //     mergeMap((_) => _),
-      //   ).subscribe(
-      //     (items) => console.log(items),
-      //     (error) => console.error(error))
       this.mosaicService.mosaicsAmountViewFromAddress(address)
         .pipe(
           combineAll(),
@@ -90,6 +75,27 @@ export class WalletDataSource implements WalletRepository {
         ).subscribe(
           (items) => resolve(items),
           (error) => reject(error))
+    })
+  }
+
+  // TODO
+  async loadBalanceAndNamespace(addr: string) {
+    return new Promise((resolve, reject) => {
+      const address = Address.createFromRawAddress(addr)
+      this.mosaicService.mosaicsAmountViewFromAddress(address)
+        .pipe(
+          combineAll(),
+          map((items) => {
+            const mosaicIds = items.map((item) => item.mosaicInfo.mosaicId)
+            console.log('mosaicIds', mosaicIds)
+            return this.mosaicHttp.getMosaicsNames(mosaicIds)
+          }),
+          mergeMap((_) => _),
+        ).subscribe(
+          (items) =>  {
+            console.log(items)
+            resolve(items)
+          }, (error) => console.error(error))
     })
   }
 }
