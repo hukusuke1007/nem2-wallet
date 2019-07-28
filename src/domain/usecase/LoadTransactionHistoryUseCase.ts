@@ -1,10 +1,11 @@
 import { TransactionRepository } from '@/domain/repository/TransactionRepository'
 import { WalletRepository } from '@/domain/repository/WalletRepository'
 import { TransactionHistory } from '@/domain/entity/TransactionHistory'
+import { TransactionHistoryInfo } from '@/domain/entity/TransactionHistoryInfo'
 
 export interface LoadTransactionHistoryUseCase {
   executeTransferHistory(id: string): Promise<TransactionHistory>
-  executeTransferHistoryAll(limit: number, id?: string): Promise<TransactionHistory[]>
+  executeTransferHistoryAll(limit: number, id?: string): Promise<TransactionHistoryInfo>
 }
 
 export class LoadTransactionHistoryUseCaseImpl implements LoadTransactionHistoryUseCase {

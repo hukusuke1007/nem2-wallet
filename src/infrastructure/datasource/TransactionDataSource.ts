@@ -1,13 +1,15 @@
-import { AccountHttp, MosaicHttp, TransactionHttp, BlockHttp, Account, Address,
-  TransferTransaction, Deadline, NetworkCurrencyMosaic, PlainMessage,
-  PublicAccount, QueryParams, TransactionInfo, Order } from 'nem2-sdk'
+import { AccountHttp, TransactionHttp, BlockHttp, Account, Address,
+  TransferTransaction, Deadline, Mosaic, MosaicId, NetworkCurrencyMosaic, PlainMessage,
+  PublicAccount, QueryParams, TransactionInfo, Order, UInt64 } from 'nem2-sdk'
 import { TransactionRepository } from '@/domain/repository/TransactionRepository'
 import { mergeMap, map, combineAll, filter } from 'rxjs/operators'
+import { ListenerWrapper } from '@/infrastructure/wrapper/ListenerWrapper'
 import { TransactionHistory } from '@/domain/entity/TransactionHistory'
+import { TransactionHistoryInfo } from '@/domain/entity/TransactionHistoryInfo'
 import { NemNode } from '@/domain/configure/NemNode'
 import { NemHelper } from '@/domain/helper/NemHelper'
 import { TransactionResult } from '@/domain/entity/TransactionResult'
-import { ListenerWrapper } from '@/infrastructure/wrapper/ListenerWrapper'
+import { SendAsset } from '@/domain/entity/SendAsset'
 
 export class TransactionDataSource implements TransactionRepository {
   nemNode: NemNode
@@ -24,13 +26,15 @@ export class TransactionDataSource implements TransactionRepository {
     this.listenerWrapper = new ListenerWrapper(nemNode.wsEndpoint)
   }
 
-  async sendAsset(privateKey: string, toAddress: string, amount: number, message?: string): Promise<TransactionResult> {
-    const recipientAddress = Address.createFromRawAddress(toAddress)
+  async sendAsset(privateKey: string, asset: SendAsset): Promise<TransactionResult> {
+    const recipientAddress = Address.createFromRawAddress(asset.address)
+    console.log(asset.getRawAmount())
     const transferTransaction = TransferTransaction.create(
         Deadline.create(),
         recipientAddress,
-        [NetworkCurrencyMosaic.createRelative(amount)],
-        message !== undefined ? PlainMessage.create(message) : PlainMessage.create(''),
+        [new Mosaic(new MosaicId(asset.mosaicId), UInt64.fromUint(asset.getRawAmount()))],
+        // [NetworkCurrencyMosaic.createRelative(asset.relativeAmount)],
+        asset.message !== undefined ? PlainMessage.create(asset.message) : PlainMessage.create(''),
         this.nemNode.network)
     const account = Account.createFromPrivateKey(privateKey, this.nemNode.network)
     const signedTransaction = account.sign(transferTransaction, this.nemNode.networkGenerationHash)
@@ -52,6 +56,10 @@ export class TransactionDataSource implements TransactionRepository {
       let transaction: TransferTransaction
       this.transactionHttp.getTransaction(id)
       .pipe(
+        map((item) => {
+          console.log('transactionHistory', item)
+          return item
+        }),
         filter((item) => item instanceof TransferTransaction),
         map((item) => {
           transaction = item as TransferTransaction
@@ -75,7 +83,7 @@ export class TransactionDataSource implements TransactionRepository {
       })
   }
 
-  async transactionHistoryAll(publicKey: string, limit: number, id?: string): Promise<TransactionHistory[]> {
+  async transactionHistoryAll(publicKey: string, limit: number, id?: string): Promise<TransactionHistoryInfo> {
     try {
       const publicAccount = PublicAccount.createFromPublicKey(publicKey, this.nemNode.network)
       return await this._transactionHistory(publicAccount, new QueryParams(limit, id, Order.DESC))
@@ -100,17 +108,18 @@ export class TransactionDataSource implements TransactionRepository {
       })
   }
 
-  private _transactionHistory(publicAccount: PublicAccount, query: QueryParams): Promise<TransactionHistory[]> {
+  private _transactionHistory(publicAccount: PublicAccount, query: QueryParams): Promise<TransactionHistoryInfo> {
     return new Promise((resolve, reject) => {
+      let lastTransactionId: string
       let transactions: TransferTransaction[] = []
       this.accountHttp.transactions(publicAccount, query)
         .pipe(
-          map((item) => {
-            console.log(item)
-            if (item.length === 0) {
-              resolve([])
+          map((items) => {
+            console.log(items)
+            if (items.length === 0) {
+              resolve(new TransactionHistoryInfo(undefined))
             }
-            return item
+            return items
           }),
           mergeMap((items) => transactions = items.filter((item) => item instanceof TransferTransaction)
             .map((item) => item as TransferTransaction)
@@ -118,8 +127,14 @@ export class TransactionDataSource implements TransactionRepository {
           map((item) =>  this.blockHttp.getBlockByHeight(item.transactionInfo!.height.compact())),
           combineAll(),
           map((blocks) => {
-            return transactions.map((item) => {
+            lastTransactionId = transactions.slice(-1)[0].transactionInfo!.id
+            const histories = transactions.map((item) => {
               const targetBlock = blocks.filter((block) => block.height.compact() === item.transactionInfo!.height.compact())[0]
+              // TODO zip使ってモザイクの可分性も取得しないといけない
+              // if (item.mosaics.length !== 0) {
+              //   const mosaicId = item.mosaics[0].id
+              //   console.log()
+              // }
               return new TransactionHistory(
                 item.transactionInfo!.id,
                 item.mosaics.length !== 0 ? item.mosaics[0].amount.compact() / NemHelper.divisibility() : 0,  // ココ暫定. 後回し.
@@ -131,6 +146,7 @@ export class TransactionDataSource implements TransactionRepository {
                 item.transactionInfo!.hash,
                 item)
             })
+            return new TransactionHistoryInfo(lastTransactionId, histories)
           }),
         ).subscribe(
           (response) => resolve(response),

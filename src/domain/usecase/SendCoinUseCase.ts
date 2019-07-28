@@ -1,9 +1,10 @@
 import { TransactionRepository } from '@/domain/repository/TransactionRepository'
 import { WalletRepository } from '@/domain/repository/WalletRepository'
 import { TransactionResult } from '@/domain/entity/TransactionResult'
+import { SendAsset } from '@/domain/entity/SendAsset'
 
 export interface SendCoinUseCase {
-  execute(address: string, amount: number, message: string): Promise<TransactionResult>
+  execute(asset: SendAsset): Promise<TransactionResult>
 }
 
 export class SendCoinUseCaseImpl implements SendCoinUseCase {
@@ -15,11 +16,11 @@ export class SendCoinUseCaseImpl implements SendCoinUseCase {
     this.walletRepository = walletRepository
   }
 
-  async execute(address: string, amount: number, message?: string) {
+  async execute(asset: SendAsset) {
     try {
       const wallet = await this.walletRepository.loadWallet()
       const privateKey = wallet!.privateKey!
-      return await this.transactionRepository.sendAsset(privateKey, address, amount, message)
+      return await this.transactionRepository.sendAsset(privateKey, asset)
     } catch (error) {
       throw error
     }

@@ -29,7 +29,7 @@ const mosaicDataSource = new MosaicDataSource(nemNode)
 const namespaceDataSource = new NamespaceDataSource(nemNode)
 
 export const provide = {
-  LoadBalanceUseCase: new LoadBalanceUseCaseImpl(walletDataSource),
+  LoadBalanceUseCase: new LoadBalanceUseCaseImpl(walletDataSource, namespaceDataSource),
   LoadWalletUseCase: new LoadWalletUseCaseImpl(walletDataSource),
   SendCoinUseCase: new SendCoinUseCaseImpl(transactionDataSource, walletDataSource),
   LoadTransactionHistoryUseCase: new LoadTransactionHistoryUseCaseImpl(transactionDataSource, walletDataSource),

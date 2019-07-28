@@ -1,13 +1,16 @@
 export class AssetMosaic {
   mosaicId: string
   namespace?: string
-  amount: number
+  relativeAmount: number
+  divisibility: number
   rawValue: any
 
-  constructor(mosaicId: string, amount: number, rawValue: any, namespace?: string) {
+  constructor(mosaicId: string, relativeAmount: number, divisibility: number, rawValue: any, namespace?: string) {
     this.mosaicId = mosaicId
-    this.amount = amount
+    this.relativeAmount = relativeAmount
+    this.divisibility = divisibility
     this.rawValue = rawValue
     this.namespace = namespace
   }
+
 }

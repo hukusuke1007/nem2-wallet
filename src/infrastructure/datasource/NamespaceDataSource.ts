@@ -28,11 +28,10 @@ export class NamespaceDataSource implements NamespaceRepository {
       const namespace = new NamespaceId(name)
       this.namespaceHttp.getNamespace(namespace)
         .pipe(
-          // map((item) => {
-          //   const a = new NamespaceId(item.levels[0].toHex())
-          //   console.log('item',  item, item.levels[0].fullName)
-          //   return item
-          // }),
+          map((item) => {
+            console.log('item', item)
+            return item
+          }),
           filter((item) => item.levels.length > 0),
           map((item) => new NamespaceEntity(name, item.levels[0].toHex(), item.owner.address.plain(), item.owner.publicKey)),
         ).subscribe(

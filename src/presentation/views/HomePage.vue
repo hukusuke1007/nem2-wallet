@@ -1,5 +1,5 @@
 <template>
-  <div class="homepage">
+  <div>
     <v-flex xs12 sm6 offset-sm3>
       <v-card v-if="wallet!==null">
         <v-container fluid>
@@ -31,38 +31,17 @@
             </div>
             <v-card-actions>
               <v-card-title>
-                <h3>Balance</h3>
-              </v-card-title>
-              <v-spacer />
-              <v-btn
-                fab
-                small
-                text
-                @click="onLoadBalance()"
-                :loading="isLoading"><v-icon>cached</v-icon></v-btn>
-            </v-card-actions>
-            <!-- <v-card-text>{{ balance }} xem</v-card-text> -->
-            <table border="1" class="table__list">
-              <td width="50%" class="table__key">currency</td>
-              <td width="50%" class="table__value">amount</td>
-              <tr v-for="(item, index) in assets" :key="index">
-                <td width="50%" class="table__key">{{ item.mosaicId }}</td>
-                <td width="50%" class="table__value">{{ item.amount }}</td>
-              </tr>
-            </table>
-            <v-card-actions>
-              <v-card-title>
                 <h3>Address</h3>
               </v-card-title>
             </v-card-actions>
-            <v-card-text>{{ wallet.address }}</v-card-text>
+            <v-card-text style="word-break: break-all;">{{ wallet.address }}</v-card-text>
             <v-card flat>
               <qriously v-model="qrJson" :size=200 />
             </v-card>
             <div>
               <a href="#" @click="() => isShowPrivateKey = !isShowPrivateKey">Show PrivateKey</a>
               <div style="margin: 8px;" v-if="isShowPrivateKey">
-                {{ wallet.privateKey }}
+                <p style="word-break: break-all;">{{ wallet.privateKey }}</p>
               </div>
             </div>
           </v-card>
@@ -83,23 +62,56 @@
           <v-card flat>
             <v-card-actions>
               <v-card-title>
+                <h3>Balance</h3>
+              </v-card-title>
+              <v-spacer />
+              <v-btn
+                fab
+                small
+                text
+                @click="onLoadBalance()"
+                :loading="isLoading"><v-icon>cached</v-icon></v-btn>
+            </v-card-actions>
+            <div v-if="assets.length!==0">
+              <v-data-table
+                :items="assets"
+                hide-default-footer
+                no-data-text="">
+                <template
+                  v-slot:item="props">
+                  <tr @click="onClickAsset(props.item)">
+                    <td width="50%">{{ props.item.mosaicId }}</td>
+                    <td width="50%">{{ props.item.relativeAmount }}</td>
+                  </tr>
+                </template>
+              </v-data-table>
+            </div>
+            <div v-else>
+              <v-card-text>0 xem</v-card-text> 
+            </div>
+            <v-card-actions>
+              <v-card-title>
                 <h3>Send</h3>
               </v-card-title>
             </v-card-actions>
             <v-form style="margin: 4px 26px;">
               <v-text-field
-                label="Address"
-                v-model="sendCoinInfo.address"
+                label="currency"
+                v-model="sendAsset.mosaicId"
+                disabled />
+              <v-text-field
+                label="address"
+                v-model="sendAsset.address"
                 required
                 placeholder="SADW6WXZVIUWIJ6RAWFSM4F4SJRUBRVOARXXIFSH" />
               <v-text-field
-                label="NEM"
-                v-model="sendCoinInfo.amount"
+                label="amount"
+                v-model="sendAsset.relativeAmount"
                 type="number"
                 required />
               <v-text-field
-                label="Message"
-                v-model="sendCoinInfo.message"
+                label="message"
+                v-model="sendAsset.message"
                 placeholder="Hello" />
             </v-form>
             <v-flex>
@@ -119,10 +131,10 @@
               <div v-for="(item, index) in errorMessages" :key="index">
                 <div v-if="item!==true" class="errorLabel">{{ item }}</div>
               </div>
-              <p v-html="resultMessage"/>
+              <p style="word-break: break-all;" v-html="resultMessage"/>
             </v-flex>
             <v-flex>
-              <v-card-actions>
+              <v-card-actions style="word-break: break-all;">
                 <v-card-title>
                   <h3>Transaction history</h3>
                 </v-card-title>
@@ -137,14 +149,14 @@
               </v-card-actions>
               <div style="margin: 4px 20px;">
                 <v-data-table
-                  :headers="headers"
+                  :headers="historyHeaders"
                   :items="transactionHistory"
                   :options.sync="pagination"
                   hide-default-footer
                   no-data-text="">
                   <template 
                     v-slot:item="props">
-                    <tr @click="onClick(props.item)">
+                    <tr @click="onClickHistory(props.item)">
                       <td width="20%">{{ props.item.amount }}</td>
                       <td width="50%">{{ props.item.hash }}</td>
                       <td width="30%">{{ props.item.date | dateFormat }}</td>
@@ -177,6 +189,8 @@ import { LoadTransactionHistoryUseCase } from '@/domain/usecase/LoadTransactionH
 import { Wallet } from '@/domain/entity/Wallet'
 import { AssetMosaic } from '@/domain/entity/AssetMosaic'
 import { TransactionHistory } from '@/domain/entity/TransactionHistory'
+import { TransactionHistoryInfo } from '@/domain/entity/TransactionHistoryInfo'
+import { SendAsset } from '@/domain/entity/SendAsset'
 import { NemHelper } from '@/domain/helper/NemHelper'
 import * as firebase from 'firebase/app'
 import 'firebase/auth'
@@ -198,7 +212,7 @@ export default class HomePage extends Vue {
 
   balance: number = 0
   assets: AssetMosaic[] = []
-  sendCoinInfo: { address: string, amount: number, message: string } = { address: '', amount: 0, message: '' }
+  sendAsset: SendAsset = new SendAsset()
   wallet: Wallet | null = null
   qrJson: string = ''
 
@@ -213,7 +227,14 @@ export default class HomePage extends Vue {
     faucetUrl: process.env.FAUCET_URL,
   }
 
-  headers: Array<{ text: string, value: string }> = [
+  // Balance
+  balanceHeaders: Array<{ text: string, value: string, align: string }> = [
+    { text: '', value: 'currency', align: 'center' },
+    { text: '', value: 'amount', align: 'center' },
+  ]
+
+  // History
+  historyHeaders: Array<{ text: string, value: string }> = [
     { text: 'amount', value: 'amount' },
     { text: 'txHash', value: 'hash' },
     { text: 'date', value: 'date' },
@@ -224,7 +245,7 @@ export default class HomePage extends Vue {
     itemsPerPage: -1,
   }
   transactionHistory: TransactionHistory[] = []
-  transactionId?: string
+  nextPagingTransactionId?: string
 
   @Watch('wallet.address')
   onValueChange(newValue: string, oldValue: string): void {
@@ -264,6 +285,9 @@ export default class HomePage extends Vue {
       if (this.wallet === null) { return }
       this.assets = await this.loadBalanceUseCase.execute(this.wallet!.address!)
       console.log('balance', this.assets)
+      if (this.assets.length !== 0) {
+        this.sendAsset.mosaicId = this.assets[0].mosaicId
+      }
     } catch (error) {
       console.error('balance', error)
     }
@@ -277,20 +301,26 @@ export default class HomePage extends Vue {
       if (this.validation().length !== 0) {
         throw new Error('Cloud not send coin.')
        }
-      const wallet = await this.loadWalletUseCase.execute()
-      const result = await this.sendCoinUseCase.execute(this.sendCoinInfo.address, Number(this.sendCoinInfo.amount), this.sendCoinInfo.message)
-      console.log('sendCoin', result)
+      this.sendAsset.relativeAmount = Number(this.sendAsset.relativeAmount)
+      const result = await this.sendCoinUseCase.execute(this.sendAsset)
+      console.log('sendAsset', result)
       this.resultMessage = `SUCCESS: ${result.hash}`
     } catch (error) {
-      console.error('sendCoin', error)
+      console.error('sendAsset', error)
       this.resultMessage = `FAILED: ${error.message}`
     }
     Vue.prototype.$toast(this.resultMessage)
     this.$store.commit('stopLoading')
   }
 
-  onClick(item: TransactionHistory) {
-    console.log('onClick', item)
+  onClickAsset(item: AssetMosaic) {
+    console.log('onClickAsset', item)
+    this.sendAsset.mosaicId = item.mosaicId
+    this.sendAsset.divisibility = item.divisibility
+  }
+
+  onClickHistory(item: TransactionHistory) {
+    console.log('onClickHistory', item)
     this.$router.push({ name: 'transaction_page', params: { transactionId: item.id } })
   }
 
@@ -299,15 +329,15 @@ export default class HomePage extends Vue {
     try {
       if (initLoad === true) {
         this.transactionHistory = []
-        this.transactionId = undefined
+        this.nextPagingTransactionId = undefined
       }
-      const history = await this.loadTransactionHistoryUseCase.executeTransferHistoryAll(20, this.transactionId)
-      console.log('history', history)
-      if (history.length !== 0) {
-        this.transactionId = history[history.length - 1].id
+      const historyInfo = await this.loadTransactionHistoryUseCase.executeTransferHistoryAll(100, this.nextPagingTransactionId)
+      console.log('history', historyInfo)
+      if (historyInfo.histories.length !== 0) {
+        this.nextPagingTransactionId = historyInfo.nextPagingTransactionId
       }
-      this.transactionHistory.push(...history)
-      console.log('onLoadTransactionHistory', this.transactionHistory, this.transactionId )
+      this.transactionHistory.push(...historyInfo.histories)
+      console.log('onLoadTransactionHistory', this.transactionHistory, this.nextPagingTransactionId )
     } catch (error) {
       console.error('onLoadTransactionHistory', error)
     }
@@ -316,28 +346,25 @@ export default class HomePage extends Vue {
 
   validation(): string[] {
     this.errorMessages = []
-    console.log(this.sendCoinInfo)
-    if (this.sendCoinInfo.address.length !== 40) {
+    console.log(this.sendAsset)
+    if (this.sendAsset.address.length !== 40) {
       this.errorMessages.push('Address (except "-") is 40 characters')
     }
-    if (!/^[a-zA-Z0-9-]+$/.test(this.sendCoinInfo.address)) {
+    if (!/^[a-zA-Z0-9-]+$/.test(this.sendAsset.address)) {
       this.errorMessages.push('Invalid input')
     }
-    if (this.sendCoinInfo.message.length > 1024) {
+    if (this.sendAsset.message !== undefined && this.sendAsset.message!.length > 1024) {
       this.errorMessages.push('Maximum number of characters in message has exceeded')
     }
     return this.errorMessages
   }
 
   clear() {
-    this.sendCoinInfo = { address: '', amount: 0, message: '' }
+    this.sendAsset.clear()
   }
 }
 </script>
 <style lang="stylus" scoped>
-.homepage
-  word-break break-all
-
 .errorLabel
   color red
 
@@ -358,7 +385,7 @@ export default class HomePage extends Vue {
     margin 8px 30px
     text-align left
 
-.v-data-table th
-  text-align center
+td
+  word-break break-all
 
 </style>

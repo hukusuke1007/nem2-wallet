@@ -5,6 +5,7 @@ import { WalletRepository } from '@/domain/repository/WalletRepository'
 import { Wallet } from '@/domain/entity/Wallet'
 import { AssetMosaic } from '@/domain/entity/AssetMosaic'
 import { NemNode } from '@/domain/configure/NemNode'
+import { combineLatest } from 'rxjs';
 
 export class WalletDataSource implements WalletRepository {
   nemNode: NemNode
@@ -66,10 +67,26 @@ export class WalletDataSource implements WalletRepository {
   async loadBalance(addr: string): Promise<AssetMosaic[]> {
     return new Promise((resolve, reject) => {
       const address = Address.createFromRawAddress(addr)
+      // this.mosaicService.mosaicsAmountViewFromAddress(address)
+      //   .pipe(
+      //     combineAll(),
+      //     map((items) => {
+      //       console.log(items)
+      //       const mosaicIds = items.map((item) => {
+      //         console.log('mosaicId', item.mosaicInfo.mosaicId)
+      //         return item.mosaicInfo.mosaicId
+      //       })
+      //       console.log('mosaicIds', mosaicIds)
+      //       return this.mosaicHttp.getMosaicsNames(mosaicIds)
+      //     }),
+      //     mergeMap((_) => _),
+      //   ).subscribe(
+      //     (items) => console.log(items),
+      //     (error) => console.error(error))
       this.mosaicService.mosaicsAmountViewFromAddress(address)
         .pipe(
           combineAll(),
-          map((items) => items.map((item) => new AssetMosaic(item.fullName(), item.relativeAmount(), item))),
+          map((items) => items.map((item) => new AssetMosaic(item.fullName(), item.relativeAmount(), item.mosaicInfo.divisibility, item))),
         ).subscribe(
           (items) => resolve(items),
           (error) => reject(error))
