@@ -8,6 +8,7 @@ import { NemNode } from '@/domain/configure/NemNode'
 import { ListenerWrapper } from '@/infrastructure/wrapper/ListenerWrapper'
 import { AssetCreation } from '@/domain/entity/AssetCreation'
 import { MosaicAggregate } from '@/domain/entity/MosaicAggregate'
+import { map } from 'rxjs/operators';
 
 type MosaicDefinitionTransactionInfo = {
   mosaicId: string,
@@ -18,15 +19,31 @@ export class MosaicDataSource implements MosaicRepository {
   nemNode: NemNode
   listenerWrapper: ListenerWrapper
   // private accountHttp: AccountHttp
-  // private mosaicHttp: MosaicHttp
+  private mosaicHttp: MosaicHttp
   private transactionHttp: TransactionHttp
 
   constructor(nemNode: NemNode) {
     this.nemNode = nemNode
     // this.accountHttp = new AccountHttp(nemNode.endpoint)
-    // this.mosaicHttp = new MosaicHttp(nemNode.endpoint)
+    this.mosaicHttp = new MosaicHttp(nemNode.endpoint)
     this.transactionHttp = new TransactionHttp(nemNode.endpoint)
     this.listenerWrapper = new ListenerWrapper(nemNode.wsEndpoint)
+  }
+
+  async loadMosaicInfo(id: string): Promise<MosaicEntity>  {
+    return new Promise((resolve, reject) => {
+      this.mosaicHttp.getMosaic(new MosaicId(id))
+      .pipe(
+        map((item) => new MosaicEntity(
+          id,
+          item.owner.address.plain(),
+          item.owner.publicKey,
+          item.divisibility,
+        )),
+      ).subscribe(
+        (response) => resolve(response),
+        (error) => reject(error))
+    })
   }
 
   async createMosaic(privateKey: string, asset: AssetCreation): Promise<MosaicEntity> {
@@ -49,6 +66,7 @@ export class MosaicDataSource implements MosaicRepository {
           mosaicDefinitionTransaction.mosaicId.toHex(),
           account.address.plain(),
           account.publicAccount.publicKey,
+          asset.divisibility,
           response.hash),
         )).catch((error) => reject(error))
       this.transactionHttp.announce(signedTransaction)

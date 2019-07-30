@@ -44,18 +44,18 @@
           </v-card-actions>
           <v-form style="margin: 0 26px;">
             <v-text-field
-              label="Asset name"
+              label="asset name"
               v-model="exchangeAssetForm.name"
               placeholder="Asset1"
-              required />
+              disabled />
             <v-text-field
-              label="Asset amount"
-              v-model="exchangeAssetForm.amount"
-              type="number"
-              required />
-            <v-text-field
-              label="Exchange NEM amount"
+              label="exchange NEM amount"
               v-model="exchangeAssetForm.exchangeNemAmount"
+              type="number"
+              disabled/>
+            <v-text-field
+              label="get amount"
+              v-model="exchangeAssetForm.amount"
               type="number"
               required />
           </v-form>
@@ -63,7 +63,7 @@
             <v-btn
               color="blue"
               class="white--text"
-              @click="onCreateAsset()"
+              @click="onExchangeAsset()"
               :loading="isLoading"
               :disabled="isLoading">EXCHANGE</v-btn>
           </v-flex>
@@ -90,17 +90,17 @@
           </v-card-actions>
           <v-form style="margin: 0 26px;">
             <v-text-field
-              label="Name"
+              label="name"
               v-model="assetForm.name"
               placeholder="shohei-ticket"
               required />
             <v-text-field
-              label="SupplyMaxAmount"
+              label="supply max amount"
               v-model="assetForm.maxAmount"
               type="number"
               required />
             <v-text-field
-              label="Exchange NEM amount"
+              label="exchange NEM amount"
               v-model="assetForm.exchangeNemAmount"
               type="number"
               required=""/>
@@ -155,7 +155,7 @@ export default class AssetExchangePage extends Vue {
   }
 
   // Exchange asset
-  exchangeAssetForm: { name: string, amount: number, exchangeNemAmount: number } = { name: '', amount: 0, exchangeNemAmount: 0 }
+  exchangeAssetForm: { name: string, assetId: string, amount: number, exchangeNemAmount: number } = { name: '', assetId: '', amount: 0, exchangeNemAmount: 0 }
 
   // Create asset
   assetForm: { name: string, maxAmount: number, exchangeNemAmount: number } = { name: '', maxAmount: 0, exchangeNemAmount: 0 }
@@ -166,10 +166,30 @@ export default class AssetExchangePage extends Vue {
 
   async configure() {
     await this.onLoadAssetList()
+    await this.onLoadAggregateBondedTransactions()
   }
 
-  onClickAssetList() {
-    
+  onClickAssetList(item: Asset) {
+    console.log('onClickAssetList', item)
+    this.setExchangeForm(item)
+  }
+
+  async onExchangeAsset() {
+    this.$store.commit('startLoading')
+    let message: string = ''
+    try {
+      const assetId = this.exchangeAssetForm.assetId
+      const exchangeAsset: Asset = this.assetList.filter((item) => item.mosaicId === assetId)[0]
+      const exchangeAmount = Number(this.exchangeAssetForm.exchangeNemAmount)
+      const getAmount = Number(this.exchangeAssetForm.amount)
+      console.log('onExchangeAsset', exchangeAmount, exchangeAsset.creatorPublicKey!, getAmount, assetId)
+      message = await this.assetExchangeUseCase.exchangeAsset(exchangeAmount, exchangeAsset.creatorPublicKey!, getAmount, assetId)
+    } catch (error) {
+      console.error('onExchangeAsset', error)
+      message = error.message
+    }
+    Vue.prototype.$toast(message)
+    this.$store.commit('stopLoading')
   }
 
   async onCreateAsset() {
@@ -183,6 +203,7 @@ export default class AssetExchangePage extends Vue {
       console.log('onCreateAsset', asset)
       message = await this.assetExchangeUseCase.createAsset(asset)
       this.clearForm()
+      this.onLoadAssetList()
     } catch (error) {
       console.error('onCreateAsset', error)
       message = error.message
@@ -195,10 +216,27 @@ export default class AssetExchangePage extends Vue {
     this.$store.commit('startLoading')
     try {
       this.assetList = await this.assetExchangeUseCase.loadAssetList()
+      if (this.assetList.length !== 0) {
+        this.setExchangeForm(this.assetList[0])
+      }
     } catch (error) {
       console.error('onLoadAssetList', error)
     }
     this.$store.commit('stopLoading')
+  }
+
+  async onLoadAggregateBondedTransactions(initLoad: boolean = false) {
+    try {
+      const historyInfo = await this.assetExchangeUseCase.loadAggregateBondedTransactions(100, undefined)
+    } catch (error) {
+      console.error('onLoadAgregateTransactions', error)
+    }
+  }
+
+  setExchangeForm(item: Asset) {
+    this.exchangeAssetForm.name = item.namespace!
+    this.exchangeAssetForm.assetId = item.mosaicId!
+    this.exchangeAssetForm.exchangeNemAmount = item.exchangeAmount!
   }
 
   clearForm() {

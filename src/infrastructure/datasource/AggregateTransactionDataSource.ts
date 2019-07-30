@@ -6,8 +6,9 @@ import { AccountHttp, TransactionHttp, Account,
 import { AggregateTransactionRepository } from '@/domain/repository/AggregateTransactionRepository'
 import { mergeMap, map, filter } from 'rxjs/operators'
 import { NemNode } from '@/domain/configure/NemNode'
-import { TransactionResult } from '@/domain/entity/TransactionResult'
 import { ListenerWrapper } from '@/infrastructure/wrapper/ListenerWrapper'
+import { TransactionResult } from '@/domain/entity/TransactionResult'
+import { AggregateEscrowDTO } from '@/domain/entity/AggregateEscrowDTO'
 
 export class AggregateTransactionDataSource implements AggregateTransactionRepository {
   nemNode: NemNode
@@ -42,22 +43,22 @@ export class AggregateTransactionDataSource implements AggregateTransactionRepos
     })
   }
 
-  async requestAggregateEscrowAsset(receiverPrivateKey: string, sendAmount: number, distributorPublicKey: string, mosaicAmount: number, mosaicName: string, mosaicNamespaceName: string): Promise<TransactionResult> {
+  async requestAggregateEscrowAsset(dto: AggregateEscrowDTO): Promise<TransactionResult> {
     return new Promise((resolve, reject) => {
-      const receiverAccount = Account.createFromPrivateKey(receiverPrivateKey, this.nemNode.network)
-      const distributorPublicAccount = PublicAccount.createFromPublicKey(distributorPublicKey, this.nemNode.network)
+      const receiverAccount = Account.createFromPrivateKey(dto.receiverPrivateKey, this.nemNode.network)
+      const distributorPublicAccount = PublicAccount.createFromPublicKey(dto.distributorPublicKey, this.nemNode.network)
       const receiverToDistributorTx = TransferTransaction.create(
         Deadline.create(),
         distributorPublicAccount.address,
-        [NetworkCurrencyMosaic.createRelative(sendAmount)],
-        PlainMessage.create(`send ${sendAmount} currency to distributor`),
+        [NetworkCurrencyMosaic.createRelative(dto.exchangeNemAmount)],
+        PlainMessage.create(`send ${dto.exchangeNemAmount} currency to distributor`),
         this.nemNode.network)
 
       const distributorToReceiverTx = TransferTransaction.create(
         Deadline.create(),
         receiverAccount.address,
-        [new Mosaic(new MosaicId(mosaicName), UInt64.fromUint(mosaicAmount))],
-        PlainMessage.create(`send ${mosaicAmount} ${mosaicNamespaceName} (${mosaicName}) to receiver`),
+        [new Mosaic(new MosaicId(dto.distributeAssetId), UInt64.fromUint(dto.distributeRawAmount))],
+        PlainMessage.create(`send ${dto.distributeRawAmount} (${dto.distributeAssetId}) to receiver`),
         this.nemNode.network)
       const aggregateTransaction = AggregateTransaction.createBonded(
         Deadline.create(),
@@ -127,24 +128,18 @@ export class AggregateTransactionDataSource implements AggregateTransactionRepos
         })
   }
 
-
-  async aggregateBondedTransactions(publicKey: string, limit: number, id?: string): Promise<any[]> {
+  async aggregateBondedTransactions(privateKey: string, limit: number, id?: string): Promise<any[]> {
     return new Promise((resolve, reject) => {
-      const publicAccount = PublicAccount.createFromPublicKey(publicKey, this.nemNode.network)
-      this.accountHttp.aggregateBondedTransactions(publicAccount, new QueryParams(limit, id, Order.DESC))
+      const account = Account.createFromPrivateKey(privateKey, this.nemNode.network)
+      this.accountHttp.aggregateBondedTransactions(account.publicAccount, new QueryParams(limit, id, Order.DESC))
         .pipe(
           map((items) => {
             console.log('aggregateBondedTransactions', items)
             return items
           }),
         ).subscribe(
-          (response) =>  {
-            console.log('aggregateBondedTransactions', response)
-            resolve(response)
-          }, (error) => {
-            console.error(error)
-            reject(error)
-          })
+          (response) => resolve(response),
+          (error) => reject(error))
         })
   }
 

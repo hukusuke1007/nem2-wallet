@@ -4,14 +4,16 @@ import { AggregateTransactionRepository } from '@/domain/repository/AggregateTra
 import { MosaicRepository } from '@/domain/repository/MosaicRepository'
 import { NamespaceRepository } from '@/domain/repository/NamespaceRepository'
 import { AssetCreation } from '@/domain/entity/AssetCreation'
-import { AggregateEscrow } from '@/domain/entity/AggregateEscrow'
+import { AggregateEscrowDTO } from '@/domain/entity/AggregateEscrowDTO'
 import { Asset } from '@/domain/entity/firebase/Asset'
 import { firestore } from '@1amageek/ballcap'
 
 export interface AssetExchangeUseCase {
   createAsset(asset: AssetCreation): Promise<string>
   loadAssetList(): Promise<Asset[]>
-  exchangeAsset(): Promise<any>
+  exchangeAsset(exchangeNemAmount: number, distributorPublicKey: string, distributeAmount: number, distributeAssetId: string): Promise<string>
+  consigAggregate(): Promise<string>
+  loadAggregateBondedTransactions(limit: number, id?: string): Promise<any[]>
 }
 
 export class AssetExchangeUseCaseImpl implements AssetExchangeUseCase {
@@ -30,6 +32,7 @@ export class AssetExchangeUseCaseImpl implements AssetExchangeUseCase {
   }
 
   async createAsset(asset: AssetCreation) {
+    let message: string
     try {
       console.log('asset', asset)
       const wallet = await this.walletRepository.loadWallet()
@@ -67,7 +70,8 @@ export class AssetExchangeUseCaseImpl implements AssetExchangeUseCase {
         mosaicSupplyChangeTxAggregate,
         mosaicToNamespaceTxAggregate,
       ])
-      console.log('result', result)
+      message = `SUCCESS: ${result.hash}`
+      console.log('result', message)
 
       const item = new Asset()
       item.uid = item.id
@@ -81,7 +85,7 @@ export class AssetExchangeUseCaseImpl implements AssetExchangeUseCase {
     } catch (error) {
       throw error
     }
-    return 'SUCCESS'
+    return message
   }
 
   async loadAssetList() {
@@ -104,22 +108,48 @@ export class AssetExchangeUseCaseImpl implements AssetExchangeUseCase {
     return results
   }
 
-  async exchangeAsset() {
+  async exchangeAsset(exchangeNemAmount: number, distributorPublicKey: string, distributeAmount: number, distributeAssetId: string) {
+    let message: string
     try {
-      // アグリゲートトランザクションの確認
-      // const aggregateEscrowAsset = await this.aggregateTransactionRepository.requestAggregateEscrowAsset(aggregateEscrow)
-      // console.log('aggregateEscrowAsset', aggregateEscrowAsset)
-      // const unconfirmedTransactions = await this.transactionRepository.unconfirmedTransactions(publicKey, 20)
-      // console.log('unconfirmedTransactions', unconfirmedTransactions)
-
-      // const consig = await this.aggregateTransactionRepository.consigAggregate('335C1693B34AAD11A56FB8187E13A98BDE9467EBA3BAFEB04E8D6437AFC5F7A0')
-      // console.log('consig', consig)
-
-      // const loadNamespacesFromAccount = await this.walletRepository.loadNamespacesFromAccount(address)
-      // console.log('loadNamespacesFromAccount', loadNamespacesFromAccount)
+      const wallet = await this.walletRepository.loadWallet()
+      const privateKey = wallet!.privateKey!
+      const mosaicInfo = await this.mosaicRepository.loadMosaicInfo(distributeAssetId)
+      const distributeRawAmount = distributeAmount / Math.pow(10, mosaicInfo.divisibility)
+      const dto = new AggregateEscrowDTO(privateKey, exchangeNemAmount, distributorPublicKey, distributeRawAmount, distributeAssetId)
+      const result = await this.aggregateRepository.requestAggregateEscrowAsset(dto)
+      message = `SUCCESS: ${result.hash}`
+      console.log('aggregateEscrowAsset', message)
     } catch (error) {
       throw error
     }
+    return message
+  }
+
+  async consigAggregate() {
+    let message: string
+    try {
+      const wallet = await this.walletRepository.loadWallet()
+      const privateKey = wallet!.privateKey!
+      const result = await this.aggregateRepository.consigAggregate(privateKey)
+      message = result.message
+      console.log('consigAggregate', message)
+    } catch (error) {
+      throw error
+    }
+    return message
+  }
+
+  async loadAggregateBondedTransactions(limit: number, id?: string) {
+    let result: any[]
+    try {
+      const wallet = await this.walletRepository.loadWallet()
+      const privateKey = wallet!.privateKey!
+      result = await this.aggregateRepository.aggregateBondedTransactions(privateKey, limit, id)
+      console.log('loadAggregateBondedTransactions', result)
+    } catch (error) {
+      throw error
+    }
+    return result
   }
 
 }

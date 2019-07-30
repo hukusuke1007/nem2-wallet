@@ -1,8 +1,7 @@
 import { TransactionHttp, Account, Address,
   Deadline, NamespaceHttp, NamespaceId, RegisterNamespaceTransaction, UInt64,
   AliasTransaction, AliasActionType,
-  MosaicId, 
-  NamespaceName} from 'nem2-sdk'
+  MosaicId } from 'nem2-sdk'
 import { map, filter } from 'rxjs/operators'
 import { NamespaceRepository } from '@/domain/repository/NamespaceRepository'
 import { NamespaceEntity } from '@/domain/entity/NamespaceEntity'
@@ -37,7 +36,7 @@ export class NamespaceDataSource implements NamespaceRepository {
         ).subscribe(
           (response) => resolve(response),
           (error) => {
-            if (this._errorNotFound(error)) {
+            if (this._errorNotFound(JSON.parse(error.message))) {
               resolve(undefined)
             } else {
               reject(error)
