@@ -145,7 +145,7 @@
                   small
                   text
                   @click="onLoadTransactionHistory(true)"
-                  :loading="isLoading"><v-icon>cached</v-icon></v-btn>
+                  :loading="isHistoryLoading"><v-icon>cached</v-icon></v-btn>
               </v-card-actions>
               <div style="margin: 4px 20px;">
                 <v-data-table
@@ -167,8 +167,8 @@
                   color="deep-orange lighten-3"
                   class="white--text"
                   @click="onLoadTransactionHistory()"
-                  :loading="isLoading"
-                  :disabled="isLoading">MORE</v-btn>
+                  :loading="isHistoryLoading"
+                  :disabled="isHistoryLoading">MORE</v-btn>
               </div>
             </v-flex>
           </v-card>
@@ -239,6 +239,7 @@ export default class HomePage extends Vue {
     { text: 'txHash', value: 'hash' },
     { text: 'date', value: 'date' },
   ]
+  isHistoryLoading: boolean = false
 
   pagination: any = {
     descending: true,
@@ -261,8 +262,8 @@ export default class HomePage extends Vue {
   async configure() {
     try {
       this.wallet = await this.loadWalletUseCase.execute()
-      await this.onLoadBalance()
-      await this.onLoadTransactionHistory()
+      this.onLoadBalance()
+      this.onLoadTransactionHistory()
     } catch (error) {
       console.error(error)
     }
@@ -321,11 +322,11 @@ export default class HomePage extends Vue {
 
   onClickHistory(item: TransactionHistory) {
     console.log('onClickHistory', item)
-    this.$router.push({ name: 'transaction_page', params: { transactionId: item.id } })
+    // this.$router.push({ name: 'transaction_page', params: { transactionId: item.id } })
   }
 
   async onLoadTransactionHistory(initLoad: boolean = false) {
-    this.$store.commit('startLoading')
+    this.isHistoryLoading = true
     try {
       if (initLoad === true) {
         this.transactionHistory = []
@@ -341,7 +342,7 @@ export default class HomePage extends Vue {
     } catch (error) {
       console.error('onLoadTransactionHistory', error)
     }
-    this.$store.commit('stopLoading')
+    this.isHistoryLoading = false
   }
 
   validation(): string[] {

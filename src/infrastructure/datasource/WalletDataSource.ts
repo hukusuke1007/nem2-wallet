@@ -66,7 +66,6 @@ export class WalletDataSource implements WalletRepository {
 
   async loadBalance(addr: string): Promise<AssetMosaic[]> {
     return new Promise((resolve, reject) => {
-      this.loadBalanceAndNamespace(addr)
       const address = Address.createFromRawAddress(addr)
       this.mosaicService.mosaicsAmountViewFromAddress(address)
         .pipe(
