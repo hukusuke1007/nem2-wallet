@@ -1,25 +1,32 @@
 import { AccountHttp, TransactionHttp, Account,
   TransferTransaction, Deadline, NetworkCurrencyMosaic, PlainMessage,
   PublicAccount, QueryParams, Order, UInt64,
-  MosaicId,
-  AggregateTransaction, Mosaic, HashLockTransaction, Listener, CosignatureTransaction, CosignatureSignedTransaction, AggregateTransactionCosignature, InnerTransaction } from 'nem2-sdk'
+  MosaicId, MosaicHttp,
+  AggregateTransaction, Mosaic, HashLockTransaction, Listener, CosignatureTransaction, CosignatureSignedTransaction, AggregateTransactionCosignature, InnerTransaction, Address } from 'nem2-sdk'
 import { AggregateTransactionRepository } from '@/domain/repository/AggregateTransactionRepository'
-import { mergeMap, map, filter } from 'rxjs/operators'
+import { of, zip } from 'rxjs'
+import { mergeMap, map, filter, catchError, combineAll } from 'rxjs/operators'
 import { NemNode } from '@/domain/configure/NemNode'
 import { ListenerWrapper } from '@/infrastructure/wrapper/ListenerWrapper'
 import { TransactionResult } from '@/domain/entity/TransactionResult'
 import { AggregateEscrowDTO } from '@/domain/entity/AggregateEscrowDTO'
+import { AggregateConsigInfo } from '@/domain/entity/AggregateConsigInfo'
+import { AggregateConsig } from '@/domain/entity/AggregateConsig'
+import { MosaicDTO } from '@/domain/entity/MosaicDTO'
+import { ZoneId } from 'js-joda';
 
 export class AggregateTransactionDataSource implements AggregateTransactionRepository {
   nemNode: NemNode
   listenerWrapper: ListenerWrapper
   private accountHttp: AccountHttp
   private transactionHttp: TransactionHttp
+  private mosaicHttp: MosaicHttp
 
   constructor(nemNode: NemNode) {
     this.nemNode = nemNode
     this.accountHttp = new AccountHttp(nemNode.endpoint)
     this.transactionHttp = new TransactionHttp(nemNode.endpoint)
+    this.mosaicHttp = new MosaicHttp(nemNode.endpoint)
     this.listenerWrapper = new ListenerWrapper(nemNode.wsEndpoint)
   }
 
@@ -128,14 +135,78 @@ export class AggregateTransactionDataSource implements AggregateTransactionRepos
         })
   }
 
-  async aggregateBondedTransactions(privateKey: string, limit: number, id?: string): Promise<any[]> {
+  async aggregateBondedTransactions(privateKey: string, limit: number, id?: string): Promise<AggregateConsigInfo> {
     return new Promise((resolve, reject) => {
       const account = Account.createFromPrivateKey(privateKey, this.nemNode.network)
+      let aggregateConsigInfo: AggregateConsigInfo
+      let aggregateTransaction: AggregateTransaction
       this.accountHttp.aggregateBondedTransactions(account.publicAccount, new QueryParams(limit, id, Order.DESC))
         .pipe(
           map((items) => {
             console.log('aggregateBondedTransactions', items)
+            if (items.length === 0) {
+              resolve(new AggregateConsigInfo(undefined))
+            }
+            aggregateConsigInfo = new AggregateConsigInfo(items.slice(-1)[0].transactionInfo!.id)
             return items
+          }),
+          mergeMap((_) => _),
+          filter((_) => !_.signedByAccount(account.publicAccount)),
+          map((item) => {
+            aggregateTransaction = item
+            return item.innerTransactions
+              .filter((tx) => tx instanceof TransferTransaction)
+              .map((tx) => tx as TransferTransaction)
+            },
+          ),
+          filter((items) => items.length === 2),
+          mergeMap((items) => {
+            const mosaicId1 = items[0]!.mosaics[0].id
+            const mosaicId2 = items[1]!.mosaics[0].id
+            return zip(
+              of(items),
+              mosaicId1 instanceof MosaicId ? this.mosaicHttp.getMosaic(new MosaicId(mosaicId1.toHex())).pipe(
+                map((mosaic) => new MosaicDTO(mosaicId1.toHex(), mosaic.divisibility)),
+                catchError((error) => of(new MosaicDTO(mosaicId1.toHex(), 0))),
+              ) : of(new MosaicDTO(mosaicId1.toHex(), 6)),
+              mosaicId2 instanceof MosaicId ? this.mosaicHttp.getMosaic(new MosaicId(mosaicId2.toHex())).pipe(
+                map((mosaic) => new MosaicDTO(mosaicId2.toHex(), mosaic.divisibility)),
+                catchError((error) => of(new MosaicDTO(mosaicId2.toHex(), 0))),
+              ) : of(new MosaicDTO(mosaicId2.toHex(), 6)),
+            )
+          }),
+          map(([txs, xDTO, yDTO]) => {
+            console.log('txs', txs)
+            const aggregateConfig = new AggregateConsig()
+            aggregateConfig.aggregateTransaction = aggregateTransaction
+            aggregateConfig.deadline = new Date(aggregateTransaction.deadline.value.atZone(ZoneId.SYSTEM).toInstant().toEpochMilli()),
+            txs.forEach((tx) => {
+              if (tx.recipient instanceof Address) {
+                const recipient = tx.recipient as Address
+                let divisibility: number = 0
+                if (tx.mosaics[0].id.toHex() === xDTO.mosaicId) {
+                  divisibility = xDTO.divisibility
+                } else {
+                  divisibility = yDTO.divisibility
+                }
+                if (account.address.plain() === recipient.plain()) {
+                  aggregateConfig.distributerAddress = recipient.plain()
+                  aggregateConfig.distributerAmount = tx.mosaics[0].amount.compact() / Math.pow(10, divisibility)
+                  aggregateConfig.distributerCurrency = tx.mosaics[0].id.toHex()
+                } else {
+                  aggregateConfig.receiverAddress = recipient.plain()
+                  aggregateConfig.receiverAmount = tx.mosaics[0].amount.compact() / Math.pow(10, divisibility)
+                  aggregateConfig.receiverCurrency = tx.mosaics[0].id.toHex()
+                }
+              }
+            })
+            return of(aggregateConfig)
+          }),
+          combineAll(),
+          map((items) => {
+            console.log('aggregateBondedTransactions', items)
+            aggregateConsigInfo.consigs = items
+            return aggregateConsigInfo
           }),
         ).subscribe(
           (response) => resolve(response),

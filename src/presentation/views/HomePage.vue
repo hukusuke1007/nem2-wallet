@@ -136,6 +136,40 @@
             <v-flex>
               <v-card-actions style="word-break: break-all;">
                 <v-card-title>
+                  <h3>Aggregate consig list</h3>
+                </v-card-title>
+                {{ aggregateConsigs.length }}
+                <v-spacer />
+                <v-btn
+                  fab
+                  small
+                  text
+                  @click="onLoadTransactionHistory(true)"
+                  :loading="isAggregateConsigLoading"><v-icon>cached</v-icon></v-btn>
+              </v-card-actions>
+              <div style="margin: 4px 20px;">
+                <v-data-table
+                  :headers="aggregateConsigHeaders"
+                  :items="aggregateConsigs"
+                  hide-default-footer
+                  no-data-text="">
+                  <template 
+                    v-slot:item="props">
+                    <tr @click="onClickAggregateConsig(props.item)">
+                      <td width="20%">{{ props.item.distributerCurrency }}</td>
+                      <td width="20%">{{ props.item.distributerAmount }}</td>
+                      <td width="20%">{{ props.item.distributerAddress }}</td>
+                      <td width="20%">{{ props.item.receiverCurrency }}</td>
+                      <td width="20%">{{ props.item.receiverAmount }}</td>
+                      <td width="20%">{{ props.item.deadline | dateFormat }}</td>
+                    </tr>
+                  </template>
+                </v-data-table>
+              </div>
+            </v-flex>
+            <v-flex>
+              <v-card-actions style="word-break: break-all;">
+                <v-card-title>
                   <h3>Transaction history</h3>
                 </v-card-title>
                 {{ transactionHistory.length }}
@@ -144,7 +178,7 @@
                   fab
                   small
                   text
-                  @click="onLoadTransactionHistory(true)"
+                  @click="onLoadAggregateConsigList(true)"
                   :loading="isHistoryLoading"><v-icon>cached</v-icon></v-btn>
               </v-card-actions>
               <div style="margin: 4px 20px;">
@@ -186,10 +220,13 @@ import { LoadBalanceUseCase } from '@/domain/usecase/LoadBalanceUseCase'
 import { LoadWalletUseCase } from '@/domain/usecase/LoadWalletUseCase'
 import { SendCoinUseCase } from '@/domain/usecase/SendCoinUseCase'
 import { LoadTransactionHistoryUseCase } from '@/domain/usecase/LoadTransactionHistoryUseCase'
+import { AssetExchangeUseCase } from '@/domain/usecase/AssetExchangeUseCase'
 import { Wallet } from '@/domain/entity/Wallet'
 import { AssetMosaic } from '@/domain/entity/AssetMosaic'
 import { TransactionHistory } from '@/domain/entity/TransactionHistory'
 import { TransactionHistoryInfo } from '@/domain/entity/TransactionHistoryInfo'
+import { AggregateConsig } from '@/domain/entity/AggregateConsig'
+import { AggregateConsigInfo } from '@/domain/entity/AggregateConsigInfo'
 import { SendAsset } from '@/domain/entity/SendAsset'
 import { NemHelper } from '@/domain/helper/NemHelper'
 import * as firebase from 'firebase/app'
@@ -209,6 +246,7 @@ export default class HomePage extends Vue {
   @Inject('LoadWalletUseCase') loadWalletUseCase!: LoadWalletUseCase
   @Inject('SendCoinUseCase') sendCoinUseCase!: SendCoinUseCase
   @Inject('LoadTransactionHistoryUseCase') loadTransactionHistoryUseCase!: LoadTransactionHistoryUseCase
+  @Inject('AssetExchangeUseCase') assetExchangeUseCase!: AssetExchangeUseCase
 
   balance: number = 0
   assets: AssetMosaic[] = []
@@ -248,6 +286,18 @@ export default class HomePage extends Vue {
   transactionHistory: TransactionHistory[] = []
   nextPagingTransactionId?: string
 
+  // Aggregate consig
+  aggregateConsigHeaders: Array<{ text: string, value: string }> = [
+    { text: 'distributer', value: 'distributerCurrency' },
+    { text: 'distributer', value: 'distributerAmount' },
+    { text: 'distributer', value: 'distributerAddress' },
+    { text: 'receiver', value: 'receiverCurrency' },
+    { text: 'receiver', value: 'receiverAmount' },
+    { text: 'deadline', value: 'deadline' },
+  ]
+  isAggregateConsigLoading: boolean = false
+  aggregateConsigs: AggregateConsig[] = []
+
   @Watch('wallet.address')
   onValueChange(newValue: string, oldValue: string): void {
     this.qrJson = NemHelper.qrJson(2, 2, 'nem2-wallet', newValue, 0, '')
@@ -264,6 +314,7 @@ export default class HomePage extends Vue {
       this.wallet = await this.loadWalletUseCase.execute()
       this.onLoadBalance()
       this.onLoadTransactionHistory()
+      this.onLoadAggregateConsigList()
     } catch (error) {
       console.error(error)
     }
@@ -332,17 +383,32 @@ export default class HomePage extends Vue {
         this.transactionHistory = []
         this.nextPagingTransactionId = undefined
       }
-      const historyInfo = await this.loadTransactionHistoryUseCase.executeTransferHistoryAll(100, this.nextPagingTransactionId)
+      const historyInfo = await this.loadTransactionHistoryUseCase.executeTransferHistoryAll(30, this.nextPagingTransactionId)
       console.log('history', historyInfo)
       if (historyInfo.histories.length !== 0) {
         this.nextPagingTransactionId = historyInfo.nextPagingTransactionId
       }
       this.transactionHistory.push(...historyInfo.histories)
-      console.log('onLoadTransactionHistory', this.transactionHistory, this.nextPagingTransactionId )
+      // console.log('onLoadTransactionHistory', this.transactionHistory, this.nextPagingTransactionId )
     } catch (error) {
       console.error('onLoadTransactionHistory', error)
     }
     this.isHistoryLoading = false
+  }
+
+  onClickAggregateConsig(item: AggregateConsig) {
+    console.log('onClickAggregateConsig', item)
+  }
+
+  async onLoadAggregateConsigList(initLoad: boolean = false) {
+    this.isAggregateConsigLoading = true
+    try {
+      const result = await this.assetExchangeUseCase.loadAggregateBondedTransactions(100, undefined)
+      this.aggregateConsigs = result.consigs
+    } catch (error) {
+      console.error('onLoadAggregateConsigList', error)
+    }
+    this.isAggregateConsigLoading = false
   }
 
   validation(): string[] {

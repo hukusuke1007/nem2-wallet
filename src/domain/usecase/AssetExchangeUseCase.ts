@@ -5,6 +5,7 @@ import { MosaicRepository } from '@/domain/repository/MosaicRepository'
 import { NamespaceRepository } from '@/domain/repository/NamespaceRepository'
 import { AssetCreation } from '@/domain/entity/AssetCreation'
 import { AggregateEscrowDTO } from '@/domain/entity/AggregateEscrowDTO'
+import { AggregateConsigInfo } from '@/domain/entity/AggregateConsigInfo'
 import { Asset } from '@/domain/entity/firebase/Asset'
 import { firestore } from '@1amageek/ballcap'
 
@@ -13,7 +14,7 @@ export interface AssetExchangeUseCase {
   loadAssetList(): Promise<Asset[]>
   exchangeAsset(exchangeNemAmount: number, distributorPublicKey: string, distributeAmount: number, distributeAssetId: string): Promise<string>
   consigAggregate(): Promise<string>
-  loadAggregateBondedTransactions(limit: number, id?: string): Promise<any[]>
+  loadAggregateBondedTransactions(limit: number, id?: string): Promise<AggregateConsigInfo>
 }
 
 export class AssetExchangeUseCaseImpl implements AssetExchangeUseCase {
@@ -95,12 +96,7 @@ export class AssetExchangeUseCaseImpl implements AssetExchangeUseCase {
       const snapshot = await collectionRef.get()
       results = snapshot.docs
         .filter((doc) => doc.exists)
-        .map((doc) => {
-          const asset = new Asset(doc.id)
-          const data = doc.data()
-          asset.setData(data)
-          return asset
-        })
+        .map((doc) => Asset.fromSnapshot(doc))
       console.log('loadAssetList', results)
     } catch (error) {
       throw error
@@ -114,7 +110,7 @@ export class AssetExchangeUseCaseImpl implements AssetExchangeUseCase {
       const wallet = await this.walletRepository.loadWallet()
       const privateKey = wallet!.privateKey!
       const mosaicInfo = await this.mosaicRepository.loadMosaicInfo(distributeAssetId)
-      const distributeRawAmount = distributeAmount / Math.pow(10, mosaicInfo.divisibility)
+      const distributeRawAmount = distributeAmount * Math.pow(10, mosaicInfo.divisibility)
       const dto = new AggregateEscrowDTO(privateKey, exchangeNemAmount, distributorPublicKey, distributeRawAmount, distributeAssetId)
       const result = await this.aggregateRepository.requestAggregateEscrowAsset(dto)
       message = `SUCCESS: ${result.hash}`
@@ -140,7 +136,7 @@ export class AssetExchangeUseCaseImpl implements AssetExchangeUseCase {
   }
 
   async loadAggregateBondedTransactions(limit: number, id?: string) {
-    let result: any[]
+    let result: AggregateConsigInfo
     try {
       const wallet = await this.walletRepository.loadWallet()
       const privateKey = wallet!.privateKey!

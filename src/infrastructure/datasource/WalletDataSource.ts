@@ -36,7 +36,7 @@ export class WalletDataSource implements WalletRepository {
 
   async loadWallet() {
     const item: any = await localForage.getItem(this.localStorageKey)
-    console.log('loadWallet', item)
+    // console.log('loadWallet', item)
     if (item !== null) {
       return new Wallet(
         'address' in item ? item.address : undefined,

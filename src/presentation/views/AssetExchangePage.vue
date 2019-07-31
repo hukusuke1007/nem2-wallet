@@ -166,7 +166,6 @@ export default class AssetExchangePage extends Vue {
 
   async configure() {
     await this.onLoadAssetList()
-    await this.onLoadAggregateBondedTransactions()
   }
 
   onClickAssetList(item: Asset) {
@@ -223,14 +222,6 @@ export default class AssetExchangePage extends Vue {
       console.error('onLoadAssetList', error)
     }
     this.$store.commit('stopLoading')
-  }
-
-  async onLoadAggregateBondedTransactions(initLoad: boolean = false) {
-    try {
-      const historyInfo = await this.assetExchangeUseCase.loadAggregateBondedTransactions(100, undefined)
-    } catch (error) {
-      console.error('onLoadAgregateTransactions', error)
-    }
   }
 
   setExchangeForm(item: Asset) {

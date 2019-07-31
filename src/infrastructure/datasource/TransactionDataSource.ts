@@ -121,7 +121,7 @@ export class TransactionDataSource implements TransactionRepository {
       this.accountHttp.transactions(publicAccount, query)
         .pipe(
           map((items) => {
-            console.log('transactionHistory', items)
+            // console.log('transactionHistory', items)
             if (items.length === 0) {
               resolve(new TransactionHistoryInfo(undefined))
             }
@@ -131,7 +131,7 @@ export class TransactionDataSource implements TransactionRepository {
             .map((item) => item as TransferTransaction)
             .filter((item) => item.transactionInfo !== undefined && item.transactionInfo instanceof TransactionInfo)),
           mergeMap((item) => {
-            console.log('transferTransction', item.mosaics[0].id.toHex(), item.transactionInfo!.hash, item)
+            // console.log('transferTransction', item.mosaics[0].id.toHex(), item.transactionInfo!.hash, item)
             return zip(
               of(item),
               this.blockHttp.getBlockByHeight(item!.transactionInfo!.height.compact()),
@@ -143,7 +143,7 @@ export class TransactionDataSource implements TransactionRepository {
             )
           }),
           map(([tx, block, divisibility]) => {
-            console.log('transactionHistory zip', tx, block, divisibility)
+            // console.log('transactionHistory zip', tx, block, divisibility)
             return of(new TransactionHistory(
               tx.transactionInfo!.id,
               tx.mosaics.length !== 0 ? tx.mosaics[0].amount.compact() / Math.pow(10, divisibility) : 0,
