@@ -5,6 +5,7 @@ import { MosaicRepository } from '@/domain/repository/MosaicRepository'
 import { NamespaceRepository } from '@/domain/repository/NamespaceRepository'
 import { AssetCreation } from '@/domain/entity/AssetCreation'
 import { AggregateEscrowDTO } from '@/domain/entity/AggregateEscrowDTO'
+import { AggregateConsig } from '@/domain/entity/AggregateConsig'
 import { AggregateConsigInfo } from '@/domain/entity/AggregateConsigInfo'
 import { Asset } from '@/domain/entity/firebase/Asset'
 import { firestore } from '@1amageek/ballcap'
@@ -13,7 +14,8 @@ export interface AssetExchangeUseCase {
   createAsset(asset: AssetCreation): Promise<string>
   loadAssetList(): Promise<Asset[]>
   exchangeAsset(exchangeNemAmount: number, distributorPublicKey: string, distributeAmount: number, distributeAssetId: string): Promise<string>
-  consigAggregate(): Promise<string>
+  consigAggregate(dto: AggregateConsig): Promise<string>
+  consigAggregateAll(): Promise<string>
   loadAggregateBondedTransactions(limit: number, id?: string): Promise<AggregateConsigInfo>
 }
 
@@ -121,12 +123,26 @@ export class AssetExchangeUseCaseImpl implements AssetExchangeUseCase {
     return message
   }
 
-  async consigAggregate() {
+  async consigAggregate(dto: AggregateConsig) {
     let message: string
     try {
       const wallet = await this.walletRepository.loadWallet()
       const privateKey = wallet!.privateKey!
-      const result = await this.aggregateRepository.consigAggregate(privateKey)
+      const result = await this.aggregateRepository.consigAggregate(privateKey, dto)
+      message = result.message
+      console.log('consigAggregate', message)
+    } catch (error) {
+      throw error
+    }
+    return message
+  }
+
+  async consigAggregateAll() {
+    let message: string
+    try {
+      const wallet = await this.walletRepository.loadWallet()
+      const privateKey = wallet!.privateKey!
+      const result = await this.aggregateRepository.consigAggregateAll(privateKey)
       message = result.message
       console.log('consigAggregate', message)
     } catch (error) {

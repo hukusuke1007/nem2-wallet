@@ -110,7 +110,26 @@ export class AggregateTransactionDataSource implements AggregateTransactionRepos
     })
   }
 
-  async consigAggregate(privateKey: string): Promise<TransactionResult> {
+  async consigAggregate(privateKey: string, dto: AggregateConsig): Promise<TransactionResult> {
+    return new Promise((resolve, reject) => {
+      const cosignAggregateBondedTransaction = (transaction: AggregateTransaction, consigAccount: Account): CosignatureSignedTransaction => {
+        const cosignatureTransaction = CosignatureTransaction.create(transaction)
+        return consigAccount.signCosignatureTransaction(cosignatureTransaction)
+      }
+      const account = Account.createFromPrivateKey(privateKey, this.nemNode.network)
+      const cosignatureSignedTransaction = cosignAggregateBondedTransaction(dto.aggregateTransaction, account)
+      this.transactionHttp.announceAggregateBondedCosignature(cosignatureSignedTransaction)
+        .pipe(
+          // listenerが必要かと
+          map((_) => new TransactionResult('SUCCESS', cosignatureSignedTransaction.parentHash)),
+        )
+        .subscribe(
+          (response) => resolve(response),
+          (error) => reject(error))
+        })
+  }
+
+  async consigAggregateAll(privateKey: string): Promise<TransactionResult> {
     return new Promise((resolve, reject) => {
       const cosignAggregateBondedTransaction = (transaction: AggregateTransaction, consigAccount: Account): CosignatureSignedTransaction => {
         const cosignatureTransaction = CosignatureTransaction.create(transaction)
@@ -151,7 +170,7 @@ export class AggregateTransactionDataSource implements AggregateTransactionRepos
             return items
           }),
           mergeMap((_) => _),
-          filter((_) => !_.signedByAccount(account.publicAccount)),
+          // filter((_) => !_.signedByAccount(account.publicAccount)),
           map((item) => {
             aggregateTransaction = item
             return item.innerTransactions
@@ -204,7 +223,6 @@ export class AggregateTransactionDataSource implements AggregateTransactionRepos
           }),
           combineAll(),
           map((items) => {
-            console.log('aggregateBondedTransactions', items)
             aggregateConsigInfo.consigs = items
             return aggregateConsigInfo
           }),
