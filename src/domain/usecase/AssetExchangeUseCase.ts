@@ -94,7 +94,7 @@ export class AssetExchangeUseCaseImpl implements AssetExchangeUseCase {
   async loadAssetList() {
     let results: Asset[] = []
     try {
-      const collectionRef = firestore.collection(`version/${Asset.version()}/${Asset.collectionName}`).orderBy('createdAt', 'desc')
+      const collectionRef = firestore.collection(Asset.collectionReference().path).orderBy('createdAt', 'desc')
       const snapshot = await collectionRef.get()
       results = snapshot.docs
         .filter((doc) => doc.exists)
