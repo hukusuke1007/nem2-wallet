@@ -13,7 +13,8 @@ import { AggregateEscrowDTO } from '@/domain/entity/AggregateEscrowDTO'
 import { AggregateConsigInfo } from '@/domain/entity/AggregateConsigInfo'
 import { AggregateConsig } from '@/domain/entity/AggregateConsig'
 import { MosaicDTO } from '@/domain/entity/MosaicDTO'
-import { ZoneId } from 'js-joda';
+import { ZoneId, ChronoUnit } from 'js-joda';
+import { NemHelper } from '@/domain/helper/NemHelper';
 
 export class AggregateTransactionDataSource implements AggregateTransactionRepository {
   nemNode: NemNode
@@ -54,21 +55,22 @@ export class AggregateTransactionDataSource implements AggregateTransactionRepos
     return new Promise((resolve, reject) => {
       const receiverAccount = Account.createFromPrivateKey(dto.receiverPrivateKey, this.nemNode.network)
       const distributorPublicAccount = PublicAccount.createFromPublicKey(dto.distributorPublicKey, this.nemNode.network)
+      const deadline = Deadline.create(23, ChronoUnit.HOURS)
       const receiverToDistributorTx = TransferTransaction.create(
-        Deadline.create(),
+        deadline,
         distributorPublicAccount.address,
         [NetworkCurrencyMosaic.createRelative(dto.exchangeNemAmount)],
         PlainMessage.create(`send ${dto.exchangeNemAmount} currency to distributor`),
         this.nemNode.network)
 
       const distributorToReceiverTx = TransferTransaction.create(
-        Deadline.create(),
+        deadline,
         receiverAccount.address,
         [new Mosaic(new MosaicId(dto.distributeAssetId), UInt64.fromUint(dto.distributeRawAmount))],
         PlainMessage.create(`send ${dto.distributeRawAmount} (${dto.distributeAssetId}) to receiver`),
         this.nemNode.network)
       const aggregateTransaction = AggregateTransaction.createBonded(
-        Deadline.create(),
+        deadline,
         [
           receiverToDistributorTx.toAggregate(receiverAccount.publicAccount),
           distributorToReceiverTx.toAggregate(distributorPublicAccount),
@@ -208,14 +210,14 @@ export class AggregateTransactionDataSource implements AggregateTransactionRepos
                 } else {
                   divisibility = yDTO.divisibility
                 }
-                if (account.address.plain() === recipient.plain()) {
-                  aggregateConfig.distributerAddress = recipient.plain()
-                  aggregateConfig.distributerAmount = tx.mosaics[0].amount.compact() / Math.pow(10, divisibility)
-                  aggregateConfig.distributerCurrency = tx.mosaics[0].id.toHex()
-                } else {
+                if (aggregateTransaction.signer!.address.plain() === tx.signer!.address.plain()) {
                   aggregateConfig.receiverAddress = recipient.plain()
-                  aggregateConfig.receiverAmount = tx.mosaics[0].amount.compact() / Math.pow(10, divisibility)
-                  aggregateConfig.receiverCurrency = tx.mosaics[0].id.toHex()
+                  aggregateConfig.receiverGetAmount = tx.mosaics[0].amount.compact() / Math.pow(10, divisibility)
+                  aggregateConfig.receiverGetCurrency = tx.mosaics[0].id.toHex()
+                } else {
+                  aggregateConfig.distributerAddress = recipient.plain()
+                  aggregateConfig.distributerGetAmount = tx.mosaics[0].amount.compact() / Math.pow(10, divisibility)
+                  aggregateConfig.distributerGetCurrency = tx.mosaics[0].id.toHex()
                 }
               }
             })

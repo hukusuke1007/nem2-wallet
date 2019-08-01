@@ -30,9 +30,11 @@
               <template 
                 v-slot:item="props">
                 <tr class="asset--list__value" @click="onClickAssetList(props.item)">
-                  <td width="40%">{{ props.item.namespace }}</td>
-                  <td width="30%">{{ props.item.exchangeAmount }}</td>
-                  <td width="40%">{{ props.item.createdAt.toDate() | dateFormat }}</td>
+                  <td width="20%">{{ props.item.namespace }}</td>
+                  <td width="20%">{{ props.item.mosaicId }}</td>
+                  <td width="20%">{{ props.item.creatorAddress }}</td>
+                  <td width="20%">{{ props.item.exchangeAmount }}</td>
+                  <td width="20%">{{ props.item.createdAt.toDate() | dateFormat }}</td>
                 </tr>
               </template>
             </v-data-table> 
@@ -145,7 +147,9 @@ export default class AssetExchangePage extends Vue {
   assetList: Asset[] = []
   headers: Array<{ text: string, value: string, align: string }> = [
     { text: 'namespace', value: 'namespace', align: 'center' },
-    { text: 'exchange NEM', value: 'exchangeAmount', align: 'center' },
+    { text: 'assetId', value: 'mosaicId', align: 'center' },
+    { text: 'distributer', value: 'creatorAddress', align: 'center' },
+    { text: 'need NEM', value: 'exchangeAmount', align: 'center' },
     { text: 'createdAt', value: 'createdAt', align: 'center' },
   ]
 

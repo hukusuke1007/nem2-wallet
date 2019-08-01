@@ -144,7 +144,7 @@
                   fab
                   small
                   text
-                  @click="onLoadTransactionHistory(true)"
+                  @click="onLoadAggregateConsigList(true)"
                   :loading="isAggregateConsigLoading"><v-icon>cached</v-icon></v-btn>
               </v-card-actions>
               <div style="margin: 4px 20px;">
@@ -156,11 +156,11 @@
                   <template 
                     v-slot:item="props">
                     <tr @click="onClickAggregateConsig(props.item)">
-                      <td width="20%">{{ props.item.distributerCurrency }}</td>
-                      <td width="20%">{{ props.item.distributerAmount }}</td>
-                      <td width="20%">{{ props.item.distributerAddress }}</td>
-                      <td width="20%">{{ props.item.receiverCurrency }}</td>
-                      <td width="20%">{{ props.item.receiverAmount }}</td>
+                      <td width="20%">{{ addressLabel(props.item.distributerAddress) }}</td>
+                      <td width="20%">{{ props.item.distributerGetAmount }}</td>
+                      <td width="20%">{{ addressLabel(props.item.receiverAddress) }}</td>
+                      <td width="20%">{{ props.item.receiverGetCurrency }}</td>
+                      <td width="20%">{{ props.item.receiverGetAmount }}</td>
                       <td width="20%">{{ props.item.deadline | dateFormat }}</td>
                     </tr>
                   </template>
@@ -235,11 +235,11 @@ import 'firebase/auth'
 @Component({
   name: 'HomePage',
   computed: mapState(['isLoading']),
-	filters: {
+ 	filters: {
 		dateFormat(date: Date) {
 			return format(date, 'YYYY/MM/DD HH:mm:ss')
     },
-	},
+  },
 })
 export default class HomePage extends Vue {
   @Inject('LoadBalanceUseCase') loadBalanceUseCase!: LoadBalanceUseCase
@@ -288,11 +288,11 @@ export default class HomePage extends Vue {
 
   // Aggregate consig
   aggregateConsigHeaders: Array<{ text: string, value: string }> = [
-    { text: 'distributer', value: 'distributerCurrency' },
-    { text: 'distributer', value: 'distributerAmount' },
     { text: 'distributer', value: 'distributerAddress' },
-    { text: 'receiver', value: 'receiverCurrency' },
-    { text: 'receiver', value: 'receiverAmount' },
+    { text: 'get nem amount', value: 'distributerGetAmount' },
+    { text: 'asset receiver', value: 'receiverAddress' },
+    { text: 'asset', value: 'receiverGetCurrency' },
+    { text: 'asset amount', value: 'receiverGetAmount' },
     { text: 'deadline', value: 'deadline' },
   ]
   isAggregateConsigLoading: boolean = false
@@ -424,6 +424,10 @@ export default class HomePage extends Vue {
       this.errorMessages.push('Maximum number of characters in message has exceeded')
     }
     return this.errorMessages
+  }
+
+  addressLabel(address: string): string {
+    return this.wallet!.address === address ? 'YOU' : address
   }
 
   clear() {

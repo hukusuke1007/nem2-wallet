@@ -26,7 +26,7 @@ export class NemHelper {
   }
 
   static rentalBlock(day: number) {
-     return day * 86400 / 15 // duration ≈ numberOfDays * 86400 / blockGenerationTargetTime
+     return day * 86400 / 15 // duration = numberOfDays * 86400 / blockGenerationTargetTime
   }
 
   private static getStr2Array(str: string) {
