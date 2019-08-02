@@ -213,13 +213,11 @@ export class AggregateTransactionDataSource implements AggregateTransactionRepos
                 }
                 console.log(account.publicAccount.address.plain(), recipient.plain(), tx.message.payload)
                 if (index === 0) {
-                  // receiver
-                  aggregateConfig.receiverAddress = recipient.plain()
+                  aggregateConfig.distributerAddress = recipient.plain()
                   aggregateConfig.distributerGetAmount = tx.mosaics[0].amount.compact() / Math.pow(10, divisibility)
                   aggregateConfig.distributerGetCurrency = tx.mosaics[0].id.toHex()
                 } else {
-                  // distributer
-                  aggregateConfig.distributerAddress = recipient.plain()
+                  aggregateConfig.receiverAddress = recipient.plain()
                   aggregateConfig.receiverGetAmount = tx.mosaics[0].amount.compact() / Math.pow(10, divisibility)
                   aggregateConfig.receiverGetCurrency = tx.mosaics[0].id.toHex()
                 }
