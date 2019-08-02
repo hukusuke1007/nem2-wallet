@@ -200,8 +200,9 @@ export class AggregateTransactionDataSource implements AggregateTransactionRepos
             console.log('txs', txs)
             const aggregateConfig = new AggregateConsig()
             aggregateConfig.aggregateTransaction = aggregateTransaction
-            aggregateConfig.deadline = new Date(aggregateTransaction.deadline.value.atZone(ZoneId.SYSTEM).toInstant().toEpochMilli()),
-            txs.forEach((tx) => {
+            aggregateConfig.deadline = new Date(aggregateTransaction.deadline.value.atZone(ZoneId.SYSTEM).toInstant().toEpochMilli())
+
+            txs.forEach((tx, index) => {
               if (tx.recipient instanceof Address) {
                 const recipient = tx.recipient as Address
                 let divisibility: number = 0
@@ -210,14 +211,17 @@ export class AggregateTransactionDataSource implements AggregateTransactionRepos
                 } else {
                   divisibility = yDTO.divisibility
                 }
-                if (aggregateTransaction.signer!.address.plain() === tx.signer!.address.plain()) {
+                console.log(account.publicAccount.address.plain(), recipient.plain(), tx.message.payload)
+                if (index === 0) {
+                  // receiver
                   aggregateConfig.receiverAddress = recipient.plain()
-                  aggregateConfig.receiverGetAmount = tx.mosaics[0].amount.compact() / Math.pow(10, divisibility)
-                  aggregateConfig.receiverGetCurrency = tx.mosaics[0].id.toHex()
-                } else {
-                  aggregateConfig.distributerAddress = recipient.plain()
                   aggregateConfig.distributerGetAmount = tx.mosaics[0].amount.compact() / Math.pow(10, divisibility)
                   aggregateConfig.distributerGetCurrency = tx.mosaics[0].id.toHex()
+                } else {
+                  // distributer
+                  aggregateConfig.distributerAddress = recipient.plain()
+                  aggregateConfig.receiverGetAmount = tx.mosaics[0].amount.compact() / Math.pow(10, divisibility)
+                  aggregateConfig.receiverGetCurrency = tx.mosaics[0].id.toHex()
                 }
               }
             })
