@@ -32,9 +32,10 @@
                 <tr class="asset--list__value" @click="onClickAssetList(props.item)">
                   <td width="20%">{{ props.item.namespace }}</td>
                   <td width="20%">{{ props.item.mosaicId }}</td>
-                  <td width="20%">{{ props.item.creatorAddress }}</td>
-                  <td width="20%">{{ props.item.exchangeAmount }}</td>
-                  <td width="20%">{{ props.item.createdAt.toDate() | dateFormat }}</td>
+                  <td width="20%">{{ props.item.relativeAmount }}</td>
+                  <td width="15%">{{ props.item.creatorAddress }}</td>
+                  <td width="10%">{{ props.item.exchangeAmount }}</td>
+                  <td width="20%">{{ props.item.createdAt | dateFormat }}</td>
                 </tr>
               </template>
             </v-data-table> 
@@ -128,7 +129,7 @@ import { format } from 'date-fns'
 import { AssetExchangeUseCase } from '@/domain/usecase/AssetExchangeUseCase'
 import { TransactionHistory } from '@/domain/entity/TransactionHistory'
 import { AssetCreation } from '@/domain/entity/AssetCreation'
-import { Asset } from '@/domain/entity/firebase/Asset'
+import { AssetForm } from '@/domain/entity/AssetForm'
 import { NemHelper } from '@/domain/helper/NemHelper'
 
 @Component({
@@ -144,10 +145,11 @@ export default class AssetExchangePage extends Vue {
   @Inject('AssetExchangeUseCase') assetExchangeUseCase!: AssetExchangeUseCase
 
   // Exchange
-  assetList: Asset[] = []
+  assetList: AssetForm[] = []
   headers: Array<{ text: string, value: string, align: string }> = [
     { text: 'namespace', value: 'namespace', align: 'center' },
     { text: 'assetId', value: 'mosaicId', align: 'center' },
+    { text: 'amount', value: 'relativeAmount', align: 'center' },
     { text: 'distributer', value: 'creatorAddress', align: 'center' },
     { text: 'need NEM', value: 'exchangeAmount', align: 'center' },
     { text: 'createdAt', value: 'createdAt', align: 'center' },
@@ -172,7 +174,7 @@ export default class AssetExchangePage extends Vue {
     await this.onLoadAssetList()
   }
 
-  onClickAssetList(item: Asset) {
+  onClickAssetList(item: AssetForm) {
     console.log('onClickAssetList', item)
     this.setExchangeForm(item)
   }
@@ -182,11 +184,13 @@ export default class AssetExchangePage extends Vue {
     let message: string = ''
     try {
       const assetId = this.exchangeAssetForm.assetId
-      const exchangeAsset: Asset = this.assetList.filter((item) => item.mosaicId === assetId)[0]
+      const creatorPublicKey: string = this.assetList
+        .filter((item) => item.mosaicId === assetId)
+        .map((item) => item.creatorPublicKey)[0]
       const exchangeAmount = Number(this.exchangeAssetForm.exchangeNemAmount)
       const getAmount = Number(this.exchangeAssetForm.amount)
-      console.log('onExchangeAsset', exchangeAmount, exchangeAsset.creatorPublicKey!, getAmount, assetId)
-      message = await this.assetExchangeUseCase.exchangeAsset(exchangeAmount, exchangeAsset.creatorPublicKey!, getAmount, assetId)
+      console.log('onExchangeAsset', exchangeAmount, creatorPublicKey!, getAmount, assetId)
+      message = await this.assetExchangeUseCase.exchangeAsset(exchangeAmount, creatorPublicKey, getAmount, assetId)
     } catch (error) {
       console.error('onExchangeAsset', error)
       message = error.message
@@ -228,7 +232,7 @@ export default class AssetExchangePage extends Vue {
     this.$store.commit('stopLoading')
   }
 
-  setExchangeForm(item: Asset) {
+  setExchangeForm(item: AssetForm) {
     this.exchangeAssetForm.name = item.namespace!
     this.exchangeAssetForm.assetId = item.mosaicId!
     this.exchangeAssetForm.exchangeNemAmount = item.exchangeAmount!

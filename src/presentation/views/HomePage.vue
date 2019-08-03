@@ -178,7 +178,7 @@
                   fab
                   small
                   text
-                  @click="onLoadAggregateConsigList(true)"
+                  @click="onLoadTransactionHistory(true)"
                   :loading="isHistoryLoading"><v-icon>cached</v-icon></v-btn>
               </v-card-actions>
               <div style="margin: 4px 20px;">
@@ -289,7 +289,7 @@ export default class HomePage extends Vue {
   // Aggregate consig
   aggregateConsigHeaders: Array<{ text: string, value: string }> = [
     { text: 'distributer', value: 'distributerAddress' },
-    { text: 'get nem amount', value: 'distributerGetAmount' },
+    { text: 'distributer get nem', value: 'distributerGetAmount' },
     { text: 'asset receiver', value: 'receiverAddress' },
     { text: 'asset', value: 'receiverGetCurrency' },
     { text: 'asset amount', value: 'receiverGetAmount' },

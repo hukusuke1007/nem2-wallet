@@ -8,11 +8,12 @@ import { AggregateEscrowDTO } from '@/domain/entity/AggregateEscrowDTO'
 import { AggregateConsig } from '@/domain/entity/AggregateConsig'
 import { AggregateConsigInfo } from '@/domain/entity/AggregateConsigInfo'
 import { Asset } from '@/domain/entity/firebase/Asset'
+import { AssetForm } from '@/domain/entity/AssetForm'
 import { firestore } from '@1amageek/ballcap'
 
 export interface AssetExchangeUseCase {
   createAsset(asset: AssetCreation): Promise<string>
-  loadAssetList(): Promise<Asset[]>
+  loadAssetList(): Promise<AssetForm[]>
   exchangeAsset(exchangeNemAmount: number, distributorPublicKey: string, distributeAmount: number, distributeAssetId: string): Promise<string>
   consigAggregate(dto: AggregateConsig): Promise<string>
   consigAggregateAll(): Promise<string>
@@ -92,13 +93,20 @@ export class AssetExchangeUseCaseImpl implements AssetExchangeUseCase {
   }
 
   async loadAssetList() {
-    let results: Asset[] = []
+    const results: AssetForm[] = []
     try {
       const collectionRef = firestore.collection(Asset.collectionReference().path).orderBy('createdAt', 'desc')
       const snapshot = await collectionRef.get()
-      results = snapshot.docs
+      const assets: Asset[] = snapshot.docs
         .filter((doc) => doc.exists)
         .map((doc) => Asset.fromSnapshot(doc))
+      for (const asset of assets) {
+        const mosaics = await this.walletRepository.loadBalance(asset.creatorAddress!)
+        const mosaic = mosaics.filter((item) => asset.mosaicId! === item.mosaicId)[0]
+        const assetForm = new AssetForm(asset.namespace!, asset.mosaicId!, asset.exchangeAmount!,
+          asset.creatorAddress!, asset.creatorPublicKey!, mosaic.relativeAmount, asset.createdAt.toDate())
+        results.push(assetForm)
+      }
       console.log('loadAssetList', results)
     } catch (error) {
       throw error
