@@ -15,8 +15,8 @@ export interface AssetExchangeUseCase {
   createAsset(asset: AssetCreation): Promise<string>
   loadAssetList(): Promise<AssetForm[]>
   exchangeAsset(exchangeNemAmount: number, distributorPublicKey: string, distributeAmount: number, distributeAssetId: string): Promise<string>
-  consigAggregate(dto: AggregateConsig): Promise<string>
-  consigAggregateAll(): Promise<string>
+  approvalConsigAggregate(dto: AggregateConsig): Promise<string>
+  approvalConsigAggregateAll(): Promise<string>
   loadAggregateBondedTransactions(limit: number, id?: string): Promise<AggregateConsigInfo>
 }
 
@@ -102,10 +102,13 @@ export class AssetExchangeUseCaseImpl implements AssetExchangeUseCase {
         .map((doc) => Asset.fromSnapshot(doc))
       for (const asset of assets) {
         const mosaics = await this.walletRepository.loadBalance(asset.creatorAddress!)
-        const mosaic = mosaics.filter((item) => asset.mosaicId! === item.mosaicId)[0]
-        const assetForm = new AssetForm(asset.namespace!, asset.mosaicId!, asset.exchangeAmount!,
-          asset.creatorAddress!, asset.creatorPublicKey!, mosaic.relativeAmount, asset.createdAt.toDate())
-        results.push(assetForm)
+        const list = mosaics.filter((item) => asset.mosaicId! === item.mosaicId)
+        if (list.length !== 0) {
+          const mosaic = list[0]
+          const assetForm = new AssetForm(asset.namespace!, asset.mosaicId!, asset.exchangeAmount!,
+            asset.creatorAddress!, asset.creatorPublicKey!, mosaic.relativeAmount, asset.createdAt.toDate())
+          results.push(assetForm)
+        }
       }
       console.log('loadAssetList', results)
     } catch (error) {
@@ -131,13 +134,13 @@ export class AssetExchangeUseCaseImpl implements AssetExchangeUseCase {
     return message
   }
 
-  async consigAggregate(dto: AggregateConsig) {
+  async approvalConsigAggregate(dto: AggregateConsig) {
     let message: string
     try {
       const wallet = await this.walletRepository.loadWallet()
       const privateKey = wallet!.privateKey!
-      const result = await this.aggregateRepository.consigAggregate(privateKey, dto)
-      message = result.message
+      const result = await this.aggregateRepository.approvalConsigAggregate(privateKey, dto)
+      message = `SUCCESS: ${result.hash}`
       console.log('consigAggregate', message)
     } catch (error) {
       throw error
@@ -145,13 +148,13 @@ export class AssetExchangeUseCaseImpl implements AssetExchangeUseCase {
     return message
   }
 
-  async consigAggregateAll() {
+  async approvalConsigAggregateAll() {
     let message: string
     try {
       const wallet = await this.walletRepository.loadWallet()
       const privateKey = wallet!.privateKey!
-      const result = await this.aggregateRepository.consigAggregateAll(privateKey)
-      message = result.message
+      const result = await this.aggregateRepository.approvalConsigAggregateAll(privateKey)
+      message = `SUCCESS: ${result.hash}`
       console.log('consigAggregate', message)
     } catch (error) {
       throw error

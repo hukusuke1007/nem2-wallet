@@ -12,15 +12,15 @@ export class ListenerWrapper {
     this.listener = new Listener(this.endpoint, WebSocket)
   }
 
-  async loadStatus(addr: string, hash: string): Promise<TransactionResult> {
+  async loadStatus(addr: string, hash: string, isUnconfirmedNotify: boolean = true): Promise<TransactionResult> {
     try {
-      return await this._loadStatus(addr, hash)
+      return await this._loadStatus(addr, hash, isUnconfirmedNotify)
     } catch (error) {
       throw error
     }
   }
 
-  private _loadStatus(addr: string, hash: string): Promise<TransactionResult> {
+  private _loadStatus(addr: string, hash: string, isUnconfirmedNotify: boolean = true): Promise<TransactionResult> {
     return new Promise((resolve, reject) => {
       const address = Address.createFromRawAddress(addr)
       this.listener.open().then(() => {
@@ -39,13 +39,20 @@ export class ListenerWrapper {
           ).subscribe(
             (response) => {
               console.log('loadStatus unconfirmedAdded' , response)
-              resolve(response)
+              if (isUnconfirmedNotify === true) { resolve(response) }
             },
             (error) => console.error('loadStatus unconfirmedAdded', error),
           )
         this.listener.confirmed(address)
+          .pipe(
+            filter((item) => (item.transactionInfo !== undefined && item.transactionInfo.hash === hash)),
+            map((item) => new TransactionResult('SUCCESS', item.transactionInfo!.hash!)),
+          )
           .subscribe(
-            (response) => console.log('loadStatus confirmed', response),
+            (response) => {
+              console.log('loadStatus confirmed', response)
+              if (isUnconfirmedNotify !== true) { resolve(response) }
+            },
             (error) => console.error('loadStatus confirmed', error),
           )
       })

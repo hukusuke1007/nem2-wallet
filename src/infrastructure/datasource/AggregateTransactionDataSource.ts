@@ -41,7 +41,7 @@ export class AggregateTransactionDataSource implements AggregateTransactionRepos
         [])
       const signedTransaction = account.sign(aggregateTransaction, this.nemNode.networkGenerationHash)
       // status
-      this.listenerWrapper.loadStatus(account.address.plain(), signedTransaction.hash)
+      this.listenerWrapper.loadStatus(account.address.plain(), signedTransaction.hash, false)
         .then((response) => resolve(response))
         .catch((error) => reject(error))
       this.transactionHttp.announce(signedTransaction)
@@ -112,7 +112,7 @@ export class AggregateTransactionDataSource implements AggregateTransactionRepos
     })
   }
 
-  async consigAggregate(privateKey: string, dto: AggregateConsig): Promise<TransactionResult> {
+  async approvalConsigAggregate(privateKey: string, dto: AggregateConsig): Promise<TransactionResult> {
     return new Promise((resolve, reject) => {
       const cosignAggregateBondedTransaction = (transaction: AggregateTransaction, consigAccount: Account): CosignatureSignedTransaction => {
         const cosignatureTransaction = CosignatureTransaction.create(transaction)
@@ -120,18 +120,21 @@ export class AggregateTransactionDataSource implements AggregateTransactionRepos
       }
       const account = Account.createFromPrivateKey(privateKey, this.nemNode.network)
       const cosignatureSignedTransaction = cosignAggregateBondedTransaction(dto.aggregateTransaction, account)
+      console.log('cosignatureSignedTransaction', cosignatureSignedTransaction)
+      this.listenerWrapper.loadStatus(account.address.plain(), cosignatureSignedTransaction.parentHash)
+        .then((response) => resolve(response))
+        .catch((error) => reject(error))
       this.transactionHttp.announceAggregateBondedCosignature(cosignatureSignedTransaction)
-        .pipe(
-          // listenerが必要かと
-          map((_) => new TransactionResult('SUCCESS', cosignatureSignedTransaction.parentHash)),
-        )
+        // .pipe(
+        //   map((_) => new TransactionResult('SUCCESS', cosignatureSignedTransaction.parentHash)),
+        // )
         .subscribe(
-          (response) => resolve(response),
+          (response) => console.log(response),
           (error) => reject(error))
         })
   }
 
-  async consigAggregateAll(privateKey: string): Promise<TransactionResult> {
+  async approvalConsigAggregateAll(privateKey: string): Promise<TransactionResult> {
     return new Promise((resolve, reject) => {
       const cosignAggregateBondedTransaction = (transaction: AggregateTransaction, consigAccount: Account): CosignatureSignedTransaction => {
         const cosignatureTransaction = CosignatureTransaction.create(transaction)

@@ -147,6 +147,19 @@
                   @click="onLoadAggregateConsigList(true)"
                   :loading="isAggregateConsigLoading"><v-icon>cached</v-icon></v-btn>
               </v-card-actions>
+              <div v-if="selectedAggregateConsig!==null">
+                <div>
+                  Your asset => {{ selectedAggregateConsig.receiverAddress }}
+                </div>
+                <v-flex>
+                  <v-btn
+                    color="blue"
+                    class="white--text"
+                    @click="onAggregateApproval()"
+                    :loading="isLoading"
+                    :disabled="isLoading">Approval</v-btn>
+                </v-flex>
+              </div>
               <div style="margin: 4px 20px;">
                 <v-data-table
                   :headers="aggregateConsigHeaders"
@@ -297,6 +310,7 @@ export default class HomePage extends Vue {
   ]
   isAggregateConsigLoading: boolean = false
   aggregateConsigs: AggregateConsig[] = []
+  selectedAggregateConsig: AggregateConsig | null = null
 
   @Watch('wallet.address')
   onValueChange(newValue: string, oldValue: string): void {
@@ -396,8 +410,33 @@ export default class HomePage extends Vue {
     this.isHistoryLoading = false
   }
 
+  async onAggregateApproval() {
+    this.$store.commit('startLoading')
+    try {
+      if (this.selectedAggregateConsig === null) {
+        throw new Error('Not select aggregate consig yet.')
+       }
+      this.resultMessage = ''
+      const result = await this.assetExchangeUseCase.approvalConsigAggregate(this.selectedAggregateConsig!)
+      console.log('onAggregateApproval', result)
+      this.resultMessage = result
+      this.selectedAggregateConsig = null
+      this.onLoadAggregateConsigList()
+    } catch (error) {
+      console.error('onAggregateApproval', error)
+      this.resultMessage = `FAILED: ${error.message}`
+    }
+    Vue.prototype.$toast(this.resultMessage)
+    this.$store.commit('stopLoading')
+  }
+
   onClickAggregateConsig(item: AggregateConsig) {
     console.log('onClickAggregateConsig', item)
+    if (item.distributerAddress === this.wallet!.address) {
+      this.selectedAggregateConsig = item
+    } else {
+      this.resultMessage = 'The approver of consig aggregate tx is not you.'
+    }
   }
 
   async onLoadAggregateConsigList(initLoad: boolean = false) {
