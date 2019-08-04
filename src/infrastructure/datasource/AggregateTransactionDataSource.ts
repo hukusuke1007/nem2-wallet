@@ -41,7 +41,7 @@ export class AggregateTransactionDataSource implements AggregateTransactionRepos
         [])
       const signedTransaction = account.sign(aggregateTransaction, this.nemNode.networkGenerationHash)
       // status
-      this.listenerWrapper.loadStatus(account.address.plain(), signedTransaction.hash, false)
+      this.listenerWrapper.loadStatus(account.address.plain(), signedTransaction.hash)
         .then((response) => resolve(response))
         .catch((error) => reject(error))
       this.transactionHttp.announce(signedTransaction)
